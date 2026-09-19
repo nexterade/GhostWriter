@@ -333,7 +333,7 @@
       position: relative;
     }
 
-    /* === HEADER (SLIM) === */
+    /* === HEADER === */
     header {
       padding: 10px 16px;
       border-bottom: 1px solid var(--border-color);
@@ -405,7 +405,7 @@
     .header-btn:hover { border-color: var(--accent); color: var(--accent); }
     .header-btn.active { border-color: var(--accent); color: var(--accent); }
 
-    /* === HEADER MENU (⋮) === */
+    /* === HEADER MENU === */
     .header-menu-wrapper { position: relative; }
 
     .header-menu-dropdown {
@@ -482,7 +482,7 @@
       scroll-padding-bottom: 24px;
     }
 
-    /* === PR-42J: SCROLL FADE + DIM + SCALE === */
+    /* === SCROLL FADE === */
     .message-row {
       display: flex;
       gap: 16px;
@@ -637,13 +637,20 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
       padding: 6px;
       min-width: 180px;
+      max-width: calc(100vw - 24px);
       z-index: 50;
       display: none;
       flex-direction: column;
       gap: 2px;
+      overflow: hidden;
     }
 
     .msg-menu-dropdown.visible { display: flex; }
+
+    .msg-menu-dropdown.open-right {
+      right: auto;
+      left: 0;
+    }
 
     .msg-menu-item {
       background: transparent;
@@ -1228,7 +1235,7 @@
       .sidebar-toggle { display: inline-block; }
       .bubble-wrapper { max-width: 95%; }
       .message-row.user .bubble-wrapper { max-width: 92%; }
-      .copy-msg-btn, .msg-menu-btn { opacity: 0.7; }
+      .copy-msg-btn, .msg-menu-btn { opacity: 1; }
       .header-subtitle { display: none; }
 
       .stats-bar { font-size: 0.65rem; gap: 10px; padding: 6px 12px; }
@@ -1552,7 +1559,7 @@
     <div class="sidebar-footer">
       <div class="sidebar-footer-brand">
         <span>👻</span>
-        <span>v2.6.1-GW</span>
+        <span>v2.6.3-GW</span>
       </div>
       <div class="sidebar-footer-actions">
         <button class="sidebar-icon-btn" id="sidebar-theme-toggle" title="Toggle tema">🌙</button>
@@ -1563,7 +1570,7 @@
   <!-- === MAIN AREA === -->
   <div class="main-area">
 
-    <!-- HEADER (SLIM) — v2.6.1: Reorder [?, 🌙, ⋮, 👤] -->
+    <!-- HEADER (SLIM) -->
     <header id="main-header">
       <div class="header-info">
         <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">☰</button>
@@ -1923,6 +1930,10 @@
         }
       });
 
+      // ===== STEP 8B: SHARED CONTAINER REF (v2.6.3 FIX) =====
+      // Pindahin chatContainer ke atas biar gak ReferenceError di STEP 9B
+      const chatContainer = document.getElementById("chat-container");
+
       // ===== STEP 9: COPY MESSAGE =====
       document.querySelectorAll(".copy-msg-btn").forEach(btn => {
         btn.addEventListener("click", (e) => {
@@ -1997,11 +2008,30 @@
           const isOpen = dropdown.classList.contains("visible");
           closeAllMsgMenus();
           if (!isOpen) {
+            const btnRect = btn.getBoundingClientRect();
+            const menuWidth = 180;
+            const spaceOnRight = window.innerWidth - btnRect.right;
+            const spaceOnLeft = btnRect.left;
+
+            dropdown.classList.remove("open-right");
+            if (spaceOnRight < menuWidth + 16 && spaceOnLeft > menuWidth + 16) {
+              dropdown.classList.add("open-right");
+            } else if (spaceOnLeft < menuWidth + 16 && spaceOnRight < menuWidth + 16) {
+              if (spaceOnLeft > spaceOnRight) {
+                dropdown.classList.add("open-right");
+              }
+            }
+
             dropdown.classList.add("visible");
             btn.classList.add("active");
           }
         });
       });
+
+      // FIX v2.6.2: Auto-close menu pas scroll
+      chatContainer?.addEventListener("scroll", () => {
+        closeAllMsgMenus();
+      }, { passive: true });
 
       document.querySelectorAll(".msg-menu-item").forEach(item => {
         item.addEventListener("click", (e) => {
@@ -2046,7 +2076,6 @@
       const searchClearBtn = document.getElementById("search-clear-btn");
       const searchPrevBtn = document.getElementById("search-prev-btn");
       const searchNextBtn = document.getElementById("search-next-btn");
-      const chatContainer = document.getElementById("chat-container");
       let searchMatches = [];
       let activeMatchIndex = -1;
 
@@ -2425,7 +2454,7 @@
         vv.addEventListener("scroll", updateViewportHeight);
       })();
 
-      // ===== STEP 16C: SWIPE GESTURE (v2.6.1 FIXED) =====
+      // ===== STEP 16C: SWIPE GESTURE =====
       (function setupSwipeGestures() {
         const EDGE_ZONE = 50;
         const SWIPE_THRESHOLD = 50;
@@ -2494,7 +2523,6 @@
           const swipedRight = deltaX > 0;
           const swipedLeft = deltaX < 0;
 
-          // SWIPE RIGHT → BUKA SIDEBAR
           if (swipedRight) {
             const sb = document.getElementById("sidebar");
             if (sb && sb.classList.contains("collapsed")) {
@@ -2506,7 +2534,6 @@
             return;
           }
 
-          // SWIPE LEFT → BUKA RIGHT RAIL
           if (swipedLeft) {
             const rr = document.getElementById("right-rail");
             if (rr && rr.classList.contains("collapsed")) {
