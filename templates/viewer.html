@@ -28,6 +28,11 @@
       --right-rail-width: 220px;
       --highlight-match: rgba(250, 204, 21, 0.35);
       --highlight-active: rgba(250, 204, 21, 0.7);
+      --purple: #a78bfa;
+      --purple-glow: rgba(167, 139, 250, 0.15);
+      --green: #4ade80;
+      --yellow: #facc15;
+      --red: #f87171;
     }
 
     html[data-theme="light"] {
@@ -46,6 +51,11 @@
       --badge-bg: #f1f5f9;
       --highlight-match: rgba(250, 204, 21, 0.45);
       --highlight-active: rgba(250, 204, 21, 0.85);
+      --purple: #7c3aed;
+      --purple-glow: rgba(124, 58, 237, 0.12);
+      --green: #16a34a;
+      --yellow: #ca8a04;
+      --red: #dc2626;
     }
 
     * {
@@ -64,7 +74,7 @@
       transition: background 0.3s ease, color 0.3s ease;
     }
 
-    /* === BRAND (logo + wordmark) === */
+    /* === BRAND === */
     .gw-brand {
       display: inline-flex;
       align-items: center;
@@ -74,10 +84,7 @@
       user-select: none;
     }
 
-    .gw-logo-svg {
-      flex-shrink: 0;
-      display: block;
-    }
+    .gw-logo-svg { flex-shrink: 0; display: block; }
 
     .gw-wordmark {
       font-size: 1.0625rem;
@@ -102,10 +109,7 @@
     .right-rail-overlay { z-index: 100; }
 
     .sidebar-overlay.visible,
-    .right-rail-overlay.visible {
-      display: block;
-      opacity: 1;
-    }
+    .right-rail-overlay.visible { display: block; opacity: 1; }
 
     /* === SIDEBAR KIRI === */
     .sidebar {
@@ -132,28 +136,11 @@
       gap: 8px;
     }
 
-    .sidebar-header .gw-brand {
-      flex: 1;
-      min-width: 0;
-    }
+    .sidebar-header .gw-brand { flex: 1; min-width: 0; }
+    .sidebar-header .gw-logo-svg { width: 22px !important; height: 22px !important; }
+    .sidebar-header .gw-wordmark { font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .sidebar-header .gw-logo-svg {
-      width: 22px !important;
-      height: 22px !important;
-    }
-
-    .sidebar-header .gw-wordmark {
-      font-size: 0.95rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .sidebar-actions {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
+    .sidebar-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
     .sidebar-icon-btn {
       background: transparent;
@@ -176,15 +163,8 @@
       color: var(--accent);
     }
 
-    .sidebar-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 6px 8px 12px;
-    }
-
-    .sidebar-section {
-      margin-bottom: 6px;
-    }
+    .sidebar-list { flex: 1; overflow-y: auto; padding: 6px 8px 12px; }
+    .sidebar-section { margin-bottom: 6px; }
 
     .sidebar-section-label {
       font-size: 0.6875rem;
@@ -209,10 +189,7 @@
     }
 
     .sidebar-item:hover { background: var(--bg-surface); }
-    .sidebar-item.active {
-      background: var(--accent-glow);
-      border-left-color: var(--accent);
-    }
+    .sidebar-item.active { background: var(--accent-glow); border-left-color: var(--accent); }
 
     .sidebar-item-title {
       font-size: 0.84rem;
@@ -224,10 +201,7 @@
       line-height: 1.35;
     }
 
-    .sidebar-item-meta {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
+    .sidebar-item-meta { font-size: 0.7rem; color: var(--text-muted); }
 
     .sidebar-footer {
       padding: 10px 12px;
@@ -248,10 +222,7 @@
       color: var(--text-muted);
     }
 
-    .sidebar-footer-actions {
-      display: flex;
-      gap: 4px;
-    }
+    .sidebar-footer-actions { display: flex; gap: 4px; }
 
     .sidebar-toggle {
       display: none;
@@ -265,10 +236,7 @@
       margin-right: 12px;
     }
 
-    .sidebar-toggle:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    .sidebar-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
     /* === RIGHT RAIL === */
     .right-rail {
@@ -302,11 +270,7 @@
       letter-spacing: 0.5px;
     }
 
-    .right-rail-list {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-    }
+    .right-rail-list { flex: 1; overflow-y: auto; padding: 8px; }
 
     .user-nav-item {
       display: flex;
@@ -387,12 +351,7 @@
       min-width: 0;
     }
 
-    .header-title-group {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-      overflow: hidden;
-    }
+    .header-title-group { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
 
     .status-dot {
       width: 8px;
@@ -420,18 +379,9 @@
       text-overflow: ellipsis;
     }
 
-    .header-tools {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
+    .header-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-    .search-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
+    .search-wrapper { position: relative; display: flex; align-items: center; }
 
     .search-icon {
       position: absolute;
@@ -488,10 +438,7 @@
       min-width: 32px;
     }
 
-    .header-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    .header-btn:hover { border-color: var(--accent); color: var(--accent); }
 
     .badge {
       font-size: 0.72rem;
@@ -505,9 +452,9 @@
     }
 
     .badge.collapsed-badge {
-      color: #a78bfa;
-      border-color: rgba(167, 139, 250, 0.5);
-      background: rgba(167, 139, 250, 0.12);
+      color: var(--purple);
+      border-color: var(--purple-glow);
+      background: var(--purple-glow);
       cursor: pointer;
     }
 
@@ -549,11 +496,7 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
-    .avatar.ai {
-      background: linear-gradient(135deg, #0284c7, #38bdf8);
-      color: #0f172a;
-    }
-
+    .avatar.ai { background: linear-gradient(135deg, #0284c7, #38bdf8); color: #0f172a; }
     .avatar.user { display: none; }
 
     .bubble-wrapper {
@@ -563,10 +506,7 @@
       min-width: 0;
     }
 
-    .message-row.user .bubble-wrapper {
-      max-width: 80%;
-      align-items: flex-end;
-    }
+    .message-row.user .bubble-wrapper { max-width: 80%; align-items: flex-end; }
 
     .bubble {
       padding: 14px 20px;
@@ -596,20 +536,16 @@
     .bubble-meta {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       margin-top: 8px;
       padding: 0 4px;
       min-height: 22px;
+      position: relative;
     }
 
-    .message-row.user .bubble-meta {
-      justify-content: flex-end;
-    }
+    .message-row.user .bubble-meta { justify-content: flex-end; }
 
-    .meta-time {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
+    .meta-time { font-size: 0.72rem; color: var(--text-muted); }
 
     .copy-msg-btn {
       opacity: 0;
@@ -625,10 +561,74 @@
     }
 
     .message-row:hover .copy-msg-btn { opacity: 0.7; }
-    .copy-msg-btn:hover {
-      opacity: 1;
-      color: var(--accent);
-      border-color: var(--accent);
+    .copy-msg-btn:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
+
+    /* === PR-43: Message Menu (dropdown) === */
+    .msg-menu-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .msg-menu-btn {
+      opacity: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 6px;
+      transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+      line-height: 1;
+    }
+
+    .message-row:hover .msg-menu-btn { opacity: 0.7; }
+    .msg-menu-btn:hover,
+    .msg-menu-btn.active { opacity: 1; color: var(--accent); border-color: var(--accent); }
+
+    .msg-menu-dropdown {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      right: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      padding: 6px;
+      min-width: 180px;
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .msg-menu-dropdown.visible { display: flex; }
+
+    .msg-menu-item {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      padding: 8px 10px;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.15s ease;
+      width: 100%;
+      font-family: inherit;
+    }
+
+    .msg-menu-item:hover { background: var(--bg-surface); color: var(--accent); }
+
+    .msg-menu-item .icon { font-size: 0.9rem; width: 16px; text-align: center; }
+
+    .msg-menu-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 4px 0;
     }
 
     .attachment-badge {
@@ -648,13 +648,7 @@
     .message-row.user .attachment-badge { align-self: flex-end; }
 
     /* === ATTACHMENT CARD === */
-    .attachment-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 12px;
-      width: 100%;
-    }
+    .attachment-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; width: 100%; }
 
     .attachment-box {
       background: var(--bg-secondary);
@@ -667,20 +661,12 @@
       max-width: 320px;
     }
 
-    .attachment-box.missing {
-      opacity: 0.55;
-      border-style: dashed;
-    }
+    .attachment-box.missing { opacity: 0.55; border-style: dashed; }
 
     .attachment-info { display: flex; align-items: center; gap: 10px; }
     .attachment-icon { font-size: 1.2rem; flex-shrink: 0; }
 
-    .attachment-text {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      line-height: 1.3;
-    }
+    .attachment-text { display: flex; flex-direction: column; overflow: hidden; line-height: 1.3; }
 
     .attachment-name {
       font-size: 0.85rem;
@@ -701,12 +687,7 @@
       background: var(--bg-primary);
     }
 
-    .attachment-preview-img img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    .attachment-preview-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     /* === MARKDOWN & CODE === */
     .markdown-body pre {
@@ -740,10 +721,7 @@
       transition: all 0.2s ease;
     }
 
-    .copy-btn:hover {
-      color: var(--accent);
-      border-color: var(--accent);
-    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
 
     .markdown-body pre code {
       padding: 14px;
@@ -758,21 +736,14 @@
     .markdown-body p:last-child { margin-bottom: 0; }
     .markdown-body ul, .markdown-body ol { margin-left: 22px; margin-bottom: 10px; }
     .markdown-body table { border-collapse: collapse; width: 100%; margin: 14px 0; }
-    .markdown-body th, .markdown-body td {
-      border: 1px solid var(--border-subtle);
-      padding: 9px 13px;
-      text-align: left;
-    }
-    .markdown-body th {
-      background-color: var(--bg-surface);
-      color: var(--accent);
-    }
+    .markdown-body th, .markdown-body td { border: 1px solid var(--border-subtle); padding: 9px 13px; text-align: left; }
+    .markdown-body th { background-color: var(--bg-surface); color: var(--accent); }
 
     /* === THINKING BLOCK === */
     .markdown-body details {
-      background: rgba(139, 92, 246, 0.08);
+      background: var(--purple-glow);
       border: 1px solid rgba(139, 92, 246, 0.3);
-      border-left: 3px solid #8b5cf6 !important;
+      border-left: 3px solid var(--purple) !important;
       border-radius: 8px;
       padding: 10px 14px !important;
       margin: 14px 0 !important;
@@ -780,7 +751,7 @@
     }
 
     .markdown-body details summary {
-      color: #a78bfa !important;
+      color: var(--purple) !important;
       font-weight: 600;
       cursor: pointer;
       list-style: none;
@@ -789,11 +760,7 @@
       gap: 6px;
     }
 
-    .markdown-body details summary::before {
-      content: "🧠";
-      font-size: 1.1em;
-    }
-
+    .markdown-body details summary::before { content: "🧠"; font-size: 1.1em; }
     .markdown-body details summary::-webkit-details-marker { display: none; }
     .markdown-body details[open] summary { margin-bottom: 10px; }
 
@@ -806,29 +773,12 @@
     }
 
     /* === KATEX === */
-    .katex-display {
-      margin: 14px 0 !important;
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding: 4px 0;
-    }
-
+    .katex-display { margin: 14px 0 !important; overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
     .katex { font-size: 1.05em; }
-
-    .katex-error {
-      color: #f87171 !important;
-      background: rgba(248, 113, 113, 0.1);
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
+    .katex-error { color: var(--red) !important; background: rgba(248, 113, 113, 0.1); padding: 2px 6px; border-radius: 4px; }
 
     /* === COLLAPSIBLE === */
-    .bubble.collapsible {
-      position: relative;
-      max-height: 420px;
-      overflow: hidden;
-      transition: max-height 0.35s ease;
-    }
+    .bubble.collapsible { position: relative; max-height: 420px; overflow: hidden; transition: max-height 0.35s ease; }
 
     .bubble.collapsible::after {
       content: "";
@@ -868,17 +818,8 @@
     }
 
     .message-row.user .collapse-toggle { align-self: flex-end; }
-
-    .collapse-toggle:hover {
-      border-color: var(--accent);
-      background: var(--accent-glow);
-    }
-
-    .collapse-toggle .icon {
-      display: inline-block;
-      transition: transform 0.25s ease;
-    }
-
+    .collapse-toggle:hover { border-color: var(--accent); background: var(--accent-glow); }
+    .collapse-toggle .icon { display: inline-block; transition: transform 0.25s ease; }
     .collapse-toggle.expanded .icon { transform: rotate(180deg); }
 
     /* === SEARCH HIGHLIGHT === */
@@ -908,14 +849,8 @@
       transition: opacity 0.3s ease, right 0.3s ease;
     }
 
-    body.right-rail-collapsed .floating-nav {
-      right: 24px;
-    }
-
-    .floating-nav.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
+    body.right-rail-collapsed .floating-nav { right: 24px; }
+    .floating-nav.visible { opacity: 1; pointer-events: auto; }
 
     .floating-btn {
       width: 42px;
@@ -933,11 +868,7 @@
       transition: all 0.2s ease;
     }
 
-    .floating-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      transform: translateY(-2px);
-    }
+    .floating-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
 
     /* === STATS FOOTER === */
     .stats-footer {
@@ -953,12 +884,163 @@
       flex-shrink: 0;
     }
 
-    .stats-footer span strong {
+    .stats-footer span strong { color: var(--text-main); font-weight: 600; }
+
+    /* === PR-42: SHORTCUT HELP MODAL === */
+    .help-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .help-modal-overlay.visible { display: flex; opacity: 1; }
+
+    .help-modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      max-width: 520px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      transform: scale(0.95);
+      transition: transform 0.25s ease;
+    }
+
+    .help-modal-overlay.visible .help-modal { transform: scale(1); }
+
+    .help-modal-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+      z-index: 1;
+    }
+
+    .help-modal-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-modal-close {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: all 0.15s ease;
+    }
+
+    .help-modal-close:hover { border-color: var(--red); color: var(--red); }
+
+    .help-modal-body { padding: 18px 22px; }
+
+    .help-section { margin-bottom: 22px; }
+    .help-section:last-child { margin-bottom: 0; }
+
+    .help-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+    }
+
+    .help-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+
+    .help-row:last-child { border-bottom: none; }
+
+    .help-label { color: var(--text-main); }
+
+    .help-keys {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.72rem;
       color: var(--text-main);
       font-weight: 600;
     }
 
-    /* === RESPONSIVE: RIGHT RAIL AS DRAWER === */
+    .kbd.accent {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* === TOAST NOTIFICATION === */
+    .gw-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .gw-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .gw-toast.success { border-color: var(--green); }
+    .gw-toast.error { border-color: var(--red); }
+
+    /* === RESPONSIVE === */
     @media (max-width: 1024px) {
       .right-rail {
         position: fixed;
@@ -972,10 +1054,7 @@
         margin-right: 0;
       }
 
-      .right-rail.collapsed {
-        transform: translateX(100%);
-        margin-right: 0;
-      }
+      .right-rail.collapsed { transform: translateX(100%); margin-right: 0; }
 
       .floating-nav { right: 24px !important; }
     }
@@ -989,29 +1068,22 @@
       }
 
       .sidebar-toggle { display: inline-block; }
-
       .bubble-wrapper { max-width: 95%; }
       .message-row.user .bubble-wrapper { max-width: 92%; }
-
       .search-input { width: 120px; }
       .search-input:focus { width: 160px; }
-
       .floating-nav { bottom: 16px; right: 16px !important; }
       .floating-btn { width: 38px; height: 38px; font-size: 1rem; }
-
-      .copy-msg-btn { opacity: 0.7; }
+      .copy-msg-btn, .msg-menu-btn { opacity: 0.7; }
       .meta-details .badge:not(.collapsed-badge) { display: none; }
-
       header { padding: 8px 12px; }
       .header-subtitle { display: none; }
-
       .stats-footer { font-size: 0.68rem; gap: 12px; padding: 8px 12px; }
-
       .right-rail { width: 260px; }
     }
 
     @media (max-width: 500px) {
-      .header-tools .header-btn:not(#theme-toggle):not(#right-rail-toggle) {
+      .header-tools .header-btn:not(#theme-toggle):not(#right-rail-toggle):not(#help-toggle) {
         display: none;
       }
     }
@@ -1026,24 +1098,13 @@
         height: auto !important;
       }
 
-      .sidebar,
-      .right-rail,
-      .floating-nav,
-      .sidebar-overlay,
-      .right-rail-overlay,
-      .copy-msg-btn,
-      .collapse-toggle,
-      .header-tools,
-      .stats-footer,
-      .sidebar-toggle {
+      .sidebar, .right-rail, .floating-nav, .sidebar-overlay, .right-rail-overlay,
+      .copy-msg-btn, .msg-menu-wrapper, .collapse-toggle, .header-tools,
+      .stats-footer, .sidebar-toggle, .help-modal-overlay, .gw-toast {
         display: none !important;
       }
 
-      .main-area {
-        display: block !important;
-        overflow: visible !important;
-        height: auto !important;
-      }
+      .main-area { display: block !important; overflow: visible !important; height: auto !important; }
 
       header {
         position: static !important;
@@ -1069,12 +1130,7 @@
       }
 
       .message-row.user .bubble { background: #f0f9ff !important; }
-
-      .bubble.collapsible {
-        max-height: none !important;
-        overflow: visible !important;
-      }
-
+      .bubble.collapsible { max-height: none !important; overflow: visible !important; }
       .bubble.collapsible::after { display: none !important; }
 
       .markdown-body pre {
@@ -1084,24 +1140,11 @@
         page-break-inside: avoid;
       }
 
-      .code-header {
-        background: #eeeeee !important;
-        color: #000000 !important;
-        border-bottom: 1px solid #cccccc !important;
-      }
-
+      .code-header { background: #eeeeee !important; color: #000000 !important; border-bottom: 1px solid #cccccc !important; }
       .copy-btn { display: none !important; }
       .markdown-body pre code { color: #000000 !important; }
-      .attachment-box {
-        border: 1px solid #cccccc !important;
-        background: #ffffff !important;
-      }
-
-      mark.search-highlight {
-        background: #ffff00 !important;
-        color: #000000 !important;
-      }
-
+      .attachment-box { border: 1px solid #cccccc !important; background: #ffffff !important; }
+      mark.search-highlight { background: #ffff00 !important; color: #000000 !important; }
       a { color: #0066cc !important; text-decoration: underline; }
     }
   </style>
@@ -1111,6 +1154,79 @@
   <!-- === OVERLAYS === -->
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <div class="right-rail-overlay" id="right-rail-overlay"></div>
+
+  <!-- === PR-42: HELP MODAL === -->
+  <div class="help-modal-overlay" id="help-modal-overlay">
+    <div class="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard Shortcuts">
+      <div class="help-modal-header">
+        <div class="help-modal-title">⌨️ Keyboard Shortcuts</div>
+        <button class="help-modal-close" id="help-modal-close" title="Tutup (Esc)">✕</button>
+      </div>
+      <div class="help-modal-body">
+
+        <div class="help-section">
+          <div class="help-section-title">🌐 Navigasi Global</div>
+          <div class="help-row">
+            <span class="help-label">Buka panel bantuan ini</span>
+            <span class="help-keys"><span class="kbd accent">?</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Tutup modal / panel</span>
+            <span class="help-keys"><span class="kbd">Esc</span></span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-section-title">🔍 Pencarian</div>
+          <div class="help-row">
+            <span class="help-label">Fokus ke search box</span>
+            <span class="help-keys"><span class="kbd accent">/</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Next match (saat search aktif)</span>
+            <span class="help-keys"><span class="kbd">Enter</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Clear search</span>
+            <span class="help-keys"><span class="kbd">Esc</span></span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-section-title">📜 Scroll & Navigasi Pesan</div>
+          <div class="help-row">
+            <span class="help-label">Pesan berikutnya</span>
+            <span class="help-keys"><span class="kbd">j</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Pesan sebelumnya</span>
+            <span class="help-keys"><span class="kbd">k</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Ke atas halaman</span>
+            <span class="help-keys"><span class="kbd">Home</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Ke bawah halaman</span>
+            <span class="help-keys"><span class="kbd">End</span></span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-section-title">💬 Pesan</div>
+          <div class="help-row">
+            <span class="help-label">Copy pesan (hover dulu)</span>
+            <span class="help-keys"><span class="kbd">📋</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Menu export (hover dulu)</span>
+            <span class="help-keys"><span class="kbd">⋯</span></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <!-- === SIDEBAR KIRI === -->
   <aside class="sidebar collapsed" id="sidebar">
@@ -1135,7 +1251,7 @@
     <div class="sidebar-footer">
       <div class="sidebar-footer-brand">
         <span>👻</span>
-        <span>v2.1-GW</span>
+        <span>v2.2.3-GW</span>
       </div>
       <div class="sidebar-footer-actions">
         <button class="sidebar-icon-btn" id="sidebar-theme-toggle" title="Toggle tema">🌙</button>
@@ -1162,6 +1278,7 @@
           <span class="search-count" id="search-count"></span>
         </div>
         <span class="badge collapsed-badge" id="collapsed-badge" style="display: none;" title="Klik untuk expand semua">📦 0</span>
+        <button class="header-btn" id="help-toggle" title="Keyboard shortcuts ( ? )">?</button>
         <button class="header-btn" id="theme-toggle" title="Toggle tema">🌙</button>
         <button class="header-btn" id="print-btn" title="Print / Save as PDF">🖨</button>
         <button class="header-btn" id="right-rail-toggle" title="Toggle navigasi user">👤</button>
@@ -1178,6 +1295,15 @@
               <div class="bubble markdown-body {% if is_long %}collapsible{% endif %}" data-raw="{{ msg.content }}" data-length="{{ raw_len }}"></div>
               <div class="bubble-meta">
                 <button class="copy-msg-btn" title="Copy pesan ini">📋</button>
+                <div class="msg-menu-wrapper">
+                  <button class="msg-menu-btn" title="Menu export">⋯</button>
+                  <div class="msg-menu-dropdown">
+                    <button class="msg-menu-item" data-action="copy-md"><span class="icon">📋</span>Copy as Markdown</button>
+                    <button class="msg-menu-item" data-action="save-md"><span class="icon">💾</span>Save as .md</button>
+                    <div class="msg-menu-divider"></div>
+                    <button class="msg-menu-item" data-action="copy-link"><span class="icon">🔗</span>Copy Permalink</button>
+                  </div>
+                </div>
                 {% if msg.timestamp %}
                   <span class="meta-time">{{ msg.timestamp }}</span>
                 {% endif %}
@@ -1191,6 +1317,15 @@
               <div class="bubble markdown-body {% if is_long %}collapsible{% endif %}" data-raw="{{ msg.content }}" data-length="{{ raw_len }}"></div>
               <div class="bubble-meta">
                 <button class="copy-msg-btn" title="Copy pesan ini">📋</button>
+                <div class="msg-menu-wrapper">
+                  <button class="msg-menu-btn" title="Menu export">⋯</button>
+                  <div class="msg-menu-dropdown">
+                    <button class="msg-menu-item" data-action="copy-md"><span class="icon">📋</span>Copy as Markdown</button>
+                    <button class="msg-menu-item" data-action="save-md"><span class="icon">💾</span>Save as .md</button>
+                    <div class="msg-menu-divider"></div>
+                    <button class="msg-menu-item" data-action="copy-link"><span class="icon">🔗</span>Copy Permalink</button>
+                  </div>
+                </div>
                 {% if msg.timestamp %}
                   <span class="meta-time">{{ msg.timestamp }}</span>
                 {% endif %}
@@ -1225,7 +1360,10 @@
     <button class="floating-btn" id="scroll-bottom" title="Ke bawah (End)">▼</button>
   </div>
 
-  <!-- === VENDOR SCRIPTS (relative parent x2) === -->
+  <!-- === TOAST === -->
+  <div class="gw-toast" id="gw-toast"></div>
+
+  <!-- === VENDOR SCRIPTS === -->
   <script src="../../vendor/marked.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/marked/marked.min.js';"></script>
   <script src="../../vendor/highlight.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js';"></script>
   <script src="../../vendor/katex.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';"></script>
@@ -1327,7 +1465,6 @@
         document.getElementById("theme-toggle")?.click();
       });
 
-      // Helper: format date group
       function getDateGroup(mtime) {
         const now = new Date();
         const d = new Date(mtime * 1000);
@@ -1343,7 +1480,6 @@
 
       const DATE_GROUP_ORDER = ["Hari Ini", "Kemarin", "7 Hari Terakhir", "30 Hari Terakhir", "Lebih Lama"];
 
-      // Deteksi convo ID current dari URL
       function detectCurrentId() {
         const parts = window.location.pathname.split("/").filter(Boolean);
         if (parts.length === 0) return "";
@@ -1357,7 +1493,6 @@
         return parts[parts.length - 1] || "";
       }
 
-      // Populate sidebar dari ../../index.json + auto-show logic
       (function loadDistIndex() {
         const currentId = detectCurrentId();
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
@@ -1370,7 +1505,6 @@
               return;
             }
 
-            // Auto-show sidebar kalo >1 convo
             if (data.items.length > 1 && !isMobile) {
               sidebar.style.display = "";
             } else if (data.items.length <= 1) {
@@ -1489,6 +1623,102 @@
           });
         });
       });
+
+      // ===== STEP 9B: PR-43 MESSAGE MENU =====
+      function closeAllMsgMenus() {
+        document.querySelectorAll(".msg-menu-dropdown.visible").forEach(d => d.classList.remove("visible"));
+        document.querySelectorAll(".msg-menu-btn.active").forEach(b => b.classList.remove("active"));
+      }
+
+      function getMessageData(btn) {
+        const wrapper = btn.closest(".bubble-wrapper");
+        const bubble = wrapper?.querySelector(".bubble");
+        const row = btn.closest(".message-row");
+        if (!bubble || !row) return null;
+
+        const raw = bubble.getAttribute("data-raw") || "";
+        const decoder = document.createElement("textarea");
+        decoder.innerHTML = raw;
+        const text = decoder.value;
+
+        const msgIndex = row.getAttribute("data-msg-index") || "0";
+        const role = row.getAttribute("data-role") || "unknown";
+        const timestamp = row.querySelector(".meta-time")?.textContent?.trim() || "";
+
+        return { text, msgIndex, role, timestamp, row };
+      }
+
+      function showToast(msg, type = "success") {
+        const toast = document.getElementById("gw-toast");
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.className = "gw-toast visible " + type;
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => {
+          toast.classList.remove("visible");
+        }, 2000);
+      }
+
+      function downloadAsFile(filename, content) {
+        const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      document.querySelectorAll(".msg-menu-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const dropdown = btn.parentElement.querySelector(".msg-menu-dropdown");
+          const isOpen = dropdown.classList.contains("visible");
+          closeAllMsgMenus();
+          if (!isOpen) {
+            dropdown.classList.add("visible");
+            btn.classList.add("active");
+          }
+        });
+      });
+
+      document.querySelectorAll(".msg-menu-item").forEach(item => {
+        item.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const action = item.getAttribute("data-action");
+          const data = getMessageData(item);
+          if (!data) return;
+
+          if (action === "copy-md") {
+            navigator.clipboard.writeText(data.text).then(() => {
+              showToast("✓ Markdown di-copy", "success");
+            }).catch(() => {
+              showToast("✗ Gagal copy", "error");
+            });
+          } else if (action === "save-md") {
+            const roleLabel = data.role === "user" ? "user" : "assistant";
+            const ts = data.timestamp ? `-${data.timestamp.replace(/[^0-9]/g, "")}` : "";
+            const filename = `msg-${String(data.msgIndex).padStart(3, "0")}-${roleLabel}${ts}.md`;
+            const header = `# Message #${data.msgIndex} (${roleLabel})\n\n`;
+            const meta = data.timestamp ? `> Timestamp: ${data.timestamp}\n\n---\n\n` : "";
+            downloadAsFile(filename, header + meta + data.text);
+            showToast(`✓ Saved: ${filename}`, "success");
+          } else if (action === "copy-link") {
+            const url = window.location.origin + window.location.pathname + `#msg-${data.msgIndex}`;
+            navigator.clipboard.writeText(url).then(() => {
+              showToast("✓ Permalink di-copy", "success");
+            }).catch(() => {
+              showToast("✗ Gagal copy link", "error");
+            });
+          }
+
+          closeAllMsgMenus();
+        });
+      });
+
+      document.addEventListener("click", closeAllMsgMenus);
 
       // ===== STEP 10: SEARCH =====
       const searchInput = document.getElementById("search-input");
@@ -1701,10 +1931,51 @@
       // ===== STEP 14: PRINT =====
       document.getElementById("print-btn")?.addEventListener("click", () => window.print());
 
+      // ===== STEP 14B: PR-42 HELP MODAL =====
+      const helpOverlay = document.getElementById("help-modal-overlay");
+      const helpToggle = document.getElementById("help-toggle");
+      const helpClose = document.getElementById("help-modal-close");
+
+      function openHelp() {
+        helpOverlay?.classList.add("visible");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeHelp() {
+        helpOverlay?.classList.remove("visible");
+        document.body.style.overflow = "";
+      }
+
+      helpToggle?.addEventListener("click", openHelp);
+      helpClose?.addEventListener("click", closeHelp);
+      helpOverlay?.addEventListener("click", (e) => {
+        if (e.target === helpOverlay) closeHelp();
+      });
+
       // ===== STEP 15: KEYBOARD =====
       document.addEventListener("keydown", (e) => {
         const tag = (e.target.tagName || "").toLowerCase();
         if (tag === "input" || tag === "textarea") return;
+
+        // PR-42: `?` shortcut (Shift+/)
+        if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          if (helpOverlay?.classList.contains("visible")) closeHelp();
+          else openHelp();
+          return;
+        }
+
+        // Esc: close modal dulu, baru panel lain
+        if (e.key === "Escape") {
+          if (helpOverlay?.classList.contains("visible")) {
+            closeHelp();
+            return;
+          }
+          if (!sidebar.classList.contains("collapsed")) closeSidebar();
+          if (!rightRail.classList.contains("collapsed")) closeRightRail();
+          return;
+        }
+
         if (e.key === "/") {
           e.preventDefault();
           searchInput?.focus();
@@ -1724,15 +1995,10 @@
           chatContainer.scrollTo({ top: 0, behavior: "smooth" });
         } else if (e.key === "End" && !e.ctrlKey) {
           chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: "smooth" });
-        } else if (e.key === "Escape") {
-          if (!sidebar.classList.contains("collapsed")) closeSidebar();
-          if (!rightRail.classList.contains("collapsed")) closeRightRail();
         }
       });
 
       // ===== STEP 16: INITIAL LAYOUT =====
-      const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
       if (window.innerWidth > 1024) openRightRail();
       else document.body.classList.add("right-rail-collapsed");
 
