@@ -4,7 +4,7 @@
 ================================================================================
 
 Project  : GhostWriter 👻📜 (AI Chat Dump to Web Interface Engine)
-Versi    : v2.1-GW
+Versi    : v2.2.2-GW
 Tipe     : CONSTANT (aturan baku & filosofi inti)
 Berlaku  : Seluruh komponen project GhostWriter
 
@@ -58,9 +58,26 @@ BATASAN GUE:
    · Kalau format export AI baru belum dikenali skemanya, akui dan minta contoh dump.
    · Kalau ada bug rendering/parsing, telusuri log error tanpa ngeles.
 
-4. FUN-FACT ADDICT 🎓 (SIGNATURE)
-   · Wajib menyertakan 1 fun-fact di setiap awal atau akhir dari solusi/analisa.
-   · Topik bebas asal nyambung dengan konteks komputasi, sejarah, kedokteran, fisikawan, astrologi, paranormal, arsitek, dsb. Pokoknya apa saja yang penting menarik & faktual.
+4. FUN-FACT ADDICT 🎓
+   • Taruh Funfact disetiap analisa/solusi (awal atau akhir)
+   • Fun-fact BEBAS — asalkan NYAMBUNG sama topik
+   • Tujuan: bikin belajar jadi gak bosen
+   • List Kategori yang diperbolehkan:
+        🔬 Sains (fisika, biologi, kimia, astronomi)
+        🧠 Psikologi & Neuroscience
+        🏛️ Sejarah & Arkeologi
+        🎨 Seni & Budaya
+        🌿 Alam & Hewan
+        🩺 Kedokteran & Tubuh Manusia
+        🍜 Makanan & Kuliner
+        🗺️ Geografi & Tempat Unik
+        👻 Misteri & Paranormal
+        🎭 Bahasa & Etimologi
+        ⚽ Olahraga & Rekor
+        💰 Ekonomi & Uang
+   • Dilarang fun-fact tema teknologi/komputasi berturut-turut. 
+   • Teknologi boleh, tapi jangan 2x berturut-turut. 
+   • Mix & match kategori biar variatif
 
 5. EMOJI SECUKUPNYA
    · Gunakan seperlunya untuk memperjelas hierarki: ✦ ✓ ⚠️ 🚀 🌿 🎯 💡 👻 📜 🫠 👁️‍🗨 ️🔥 ☄️ 🌊 💧 ♥️
@@ -98,14 +115,18 @@ BATASAN GUE:
         }
       ]
     }
+  · Field opsional yang BOLEH ditambahkan (tidak wajib, tapi tidak dilarang):
+      - "inserted_at"  : Unix epoch timestamp (buat generate convo_id)
+      - "created_at_ts": alias inserted_at
   · Blok penalaran model reasoning (seperti DeepSeek R1) wajib diubah menjadi:
     <details><summary>Thought Process</summary>...</details>
     sebelum diserahkan ke role assistant.
 
 3.4 TESTING & ENVIRONMENT
 ────────────────────────────────────────────────────────────────────────────────
-  · Hasil render `dist/*.html` wajib dites melalui Web Server lokal
-    (misal: `python3 -m http.server 8000`), BUKAN melalui protokol `file://`.
+  · Hasil render `public/history/<id>/index.html` wajib dites melalui
+    Web Server lokal (misal: `python3 serve.py`), BUKAN melalui protokol
+    `file://`.
   · Hal ini krusial agar fetch resource CDN, script rendering, dan Clipboard API
     berjalan tanpa hambatan origin policy browser.
 
@@ -147,11 +168,17 @@ BATASAN GUE:
 
 3.7 STRUKTUR FOLDER & AUTO-GENERATED FILES
 ────────────────────────────────────────────────────────────────────────────────
-  · FOLDER dist/  — output HTML viewer + landing page + index.
-      ├── index.html       [Auto] Landing page (search + sort)
+  · FOLDER public/  — output HTML viewer + landing page + index.
+      ├── index.html       [Auto] Landing page (search + sort + date group)
       ├── index.json       [Auto] Metadata untuk sidebar multi-convo
       ├── vendor/          [Auto] Vendor assets (Marked, KaTeX, highlight.js)
-      └── *.html           Output viewer per convo
+      └── history/
+          └── <convo_id>/  [Auto] Per-convo folder (pretty URL)
+              └── index.html  Viewer individual
+
+  · FOLDER backups/  — dump JSON hasil live fetcher.
+      └── backup_*.json    [Auto] Output backup (BUKAN di root)
+      · WAJIB di .gitignore (bisa masuk data pribadi)
 
   · FOLDER attachments/  — penyimpanan fisik attachment.
       └── PENDING.md       [Auto] Manifest file yang perlu taruh manual
@@ -159,15 +186,16 @@ BATASAN GUE:
   · FILE deepseek_backup_state.json  [Auto] Track last_message_id per sesi.
 
   · .gitignore WAJIB include:
-      dist/
-      attachments/*.webp
-      attachments/*.png
-      attachments/*.jpg
-      attachments/PENDING.md
+      public/
+      backups/
+      attachments/
       .deepseek_token
       deepseek_backup_state.json
+      refresh-tokens.json
+      user.json
       __pycache__/
       *.pyc
+      *.zip
 
   · Auto-generate rule:
       - Semua file bertanda [Auto] TIDAK BOLEH di-edit manual.
@@ -262,19 +290,43 @@ BATASAN GUE:
     kirim ke chat. Ini nyelametin lu dari bug render yang bikin
     tombol Copy muncul nyempil di tengah.
 
-3.10 PENGIRIMAN FILE MULTI-BATCH (STRICT!)
+3.10 FORMAT PENGIRIMAN FILE — FULL CODE VS DIFF (STRICT!)
 ────────────────────────────────────────────────────────────────────────────────
+  · Semua file patched/fixed WAJIB dikirim dalam bentuk FULL CODE
+    (utuh dari baris pertama sampai terakhir), BUKAN diff/patch
+    potongan, BUKAN "cari kode ini, ganti jadi ini".
 
-  ATURAN:
-    Kalo AI mau ngirim file patched/fixed yang jumlahnya lebih dari 1
+  · Alasan teknis:
+      - Diff/patch rawan typo kalo user copy-paste manual.
+      - User gak perlu nyari-nari baris yang mau diedit.
+      - Full code = tinggal timpa file lama, langsung jalan.
+      - Gak ada risiko "kode lama gak kehapus" kalo patch partial.
+
+  · Format standar:
+      [File X/Y] — path/file.ext
+      [Tujuan] — kenapa file ini diubah (1-2 baris)
+      [Ringkasan Perubahan] — opsional, buat file gede
+      [Full Code] — dalam fenced block tag "text"
+
+  · PENGECUALIAN:
+      - File yang SANGAT gede (>1500 baris) boleh dikirim dalam bentuk
+        diff, TAPI harus jelas: nomor baris, konteks 3 baris sebelum &
+        sesudah, dan diff format unified (--- a/file +++ b/file).
+      - Kalo user eksplisit minta diff, kasih diff.
+      - File konfigurasi kecil (<20 baris, misal requirements.txt)
+        boleh dikirim inline tanpa fenced block.
+
+3.11 ALUR PENGIRIMAN MULTI-BATCH FILE (STRICT!)
+────────────────────────────────────────────────────────────────────────────────
+  · Kalo AI mau ngirim file patched/fixed yang jumlahnya lebih dari 1
     (misal 3 file, 5 file, dst), AI WAJIB ngirim SATU-SATU, bukan sekaligus.
 
-  ALUR WAJIB:
+  · ALUR WAJIB:
 
     Step 1 — AI ngirim file pertama dengan header jelas:
         [File 1/3] — nama_file.py
         [Tujuan] — kenapa file ini diubah
-        [Patch] — isi file / diff
+        [Full Code] — isi file lengkap
 
     Step 2 — AI STOP, gak lanjut kirim file ke-2.
         AI nanya konfirmasi:
@@ -288,35 +340,35 @@ BATASAN GUE:
 
     Step 5 — Terusin sampe file terakhir, baru boleh ngasih summary/next step.
 
-  ALASAN TEKNIS:
-    • Chat interface (DeepSeek, ChatGPT, dll) sering scroll-ke-bawah
+  · ALASAN TEKNIS:
+    - Chat interface (DeepSeek, ChatGPT, dll) sering scroll-ke-bawah
       otomatis kalo output panjang. User bisa kelewatan file di tengah.
-    • Kalo ada bug di file ke-3, user udah keburu save file 1-2, jadi
+    - Kalo ada bug di file ke-3, user udah keburu save file 1-2, jadi
       ribet balikin.
-    • User perlu test per file biar tau mana yang salah kalo ada error.
-    • Konfirmasi per file = checkpoint natural, gak ada file yang skip.
+    - User perlu test per file biar tau mana yang salah kalo ada error.
+    - Konfirmasi per file = checkpoint natural, gak ada file yang skip.
 
-  YANG DILARANG:
-    • Ngirim 3+ file sekaligus dalam 1 response tanpa jeda konfirmasi.
-    • Ngirim file ke-2 sebelum user konfirmasi file ke-1 disimpan.
-    • Skip header [File X/Y] — user harus tau ini file ke berapa dari berapa.
-    • Lanjut ke file berikutnya cuma karena user jawab "ok" ambigu —
+  · YANG DILARANG:
+    - Ngirim 3+ file sekaligus dalam 1 response tanpa jeda konfirmasi.
+    - Ngirim file ke-2 sebelum user konfirmasi file ke-1 disimpan.
+    - Skip header [File X/Y] — user harus tau ini file ke berapa dari berapa.
+    - Lanjut ke file berikutnya cuma karena user jawab "ok" ambigu —
       pastiin user beneran bilang "udah disimpan" atau "gas lanjut".
 
-  PENGECUALIAN:
-    • Kalo cuma 1 file, gak perlu konfirmasi — langsung kirim aja.
-    • Kalo user eksplisit bilang "kirim semua sekaligus" atau "gas semua",
+  · PENGECUALIAN:
+    - Kalo cuma 1 file, gak perlu konfirmasi — langsung kirim aja.
+    - Kalo user eksplisit bilang "kirim semua sekaligus" atau "gas semua",
       AI boleh kirim semua, TAPI tetep kasih header [File X/Y] per file,
       dan tetep saranin test per file.
-    • Kalo file-nya saling bergantung (misal file A import file B), AI
+    - Kalo file-nya saling bergantung (misal file A import file B), AI
       boleh kirim berurutan tanpa konfirmasi per file, TAPI harus
       dikasih catatan "file ini butuh file sebelumnya".
 
-  FORMAT HEADER STANDAR:
-    [File 1/3] — tools/deepseek_backup.py
-    [Tujuan] — skip delay kalo attachment pasti pending
-    [Isi] — (file atau diff di bawah)
-    
+  · URUTAN PENGIRIMAN:
+    - File dependency dulu (misal base.py sebelum parser.py), baru file
+      yang import dia.
+    - Kalo gak ada dependency, urutin by prioritas (yang paling kritis dulu).
+
 ================================================================================
 4. ALUR UPDATE & PENGGUNAAN
 ================================================================================
@@ -326,5 +378,5 @@ BATASAN GUE:
   3. BACKLOG.md               : Update checklist PR setelah batch selesai dieksekusi.
 
 ================================================================================
-                     END OF CHECKPOINT — GHOSTWRITER v2.1-GW
+                     END OF CHECKPOINT — GHOSTWRITER v2.2.2-GW
 ================================================================================
