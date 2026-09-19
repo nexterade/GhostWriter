@@ -9,6 +9,10 @@
 - [x] **FEAT-05: Pretty URL Viewer** — Struktur `public/history/<id>/index.html` (SEO-friendly, gampang sharing).
 - [x] **FEAT-06: Local HTTP Server** — `serve.py` dengan auto-open browser & Termux detection.
 - [x] **FEAT-07: Index Sync Tool** — `sync.py` untuk regenerate index tanpa render ulang.
+- [x] **FEAT-08: Multi-Scroll-Effect** — 5 variasi scroll effect configurable.
+- [x] **FEAT-09: Multi-Loading-Effect** — Loading overlay configurable.
+- [x] **FEAT-10: Bidirectional Swipe Gesture** — Swipe buka/tutup drawer.
+- [x] **FEAT-11: Auto-Close Drawer** — Buka 1 drawer → auto-close drawer lain.
 
 ---
 
@@ -95,36 +99,36 @@
 
 ### Batch 3.11: User-Friendly CLI Redesign (v2.4.0)
 - [x] **PR-42E: Menu Redesign — Soft & Friendly + Nomor [N]**
-  - Ganti box border → bullet ▸ + garis horizontal + nomor [N].
-  - Footer context: file backup count, size, convo count, jam.
-  - Default action = 0 (keluar) — safe default.
 - [x] **PR-42F: Tutorial Upgrade**
-  - Quick Start section (BARU).
-  - Troubleshooting di-group jadi 2 kategori.
-  - Tips & Trik section (BARU).
-  - Footer navigasi.
 - [x] **PR-42G: Konsistensi Istilah**
-  - "sesi" → "obrolan", "attachment" → "lampiran".
-  - Title pake quote `💬 "..."`.
-  - Warning dengan context (pesan kosong = lampiran gambar).
-  - PENDING.md upgrade: emoji + markdown + footer.
 
 ### Batch 4: Action D — Polish Backlog Lama (v2.5.0)
 - [x] **PR-30: Fix Dedup Edge Case**
-  - `_normalize_title()` gak strip angka kurung lagi.
-  - 2-pass dedup: normal dulu (keep "Chat (1)" & "Chat (2)" sebagai beda),
-    aggressive fallback kalo > MAX_INDEX_ITEMS.
-  - Keep highest mtime kalo ada duplikat.
-  - Helper `_convo_sort_key()` untuk sort stabil by ID numeric + mtime.
 - [x] **PR-32: Backup Versioning**
-  - Timestamp suffix `backup_<slug>_YYYYMMDD_HHMMSS.json`.
-  - Retention policy: maks 5 versi terakhir.
-  - Helper `_generate_backup_name()` + `_prune_old_backups()` di `main.py`.
 - [x] **PR-33: Prune Stale public/history/**
-  - Flag `--clean` + `--dry-run` + `--yes` di `sync.py`.
-  - Auto-detect valid IDs dari `backups/*.json`.
-  - Manual mode: `--keep ID1,ID2` (kalo gak ada backup).
-  - Safety nets: dry-run + konfirmasi + report freed size.
+
+### Batch 5: Mobile Polish v2.6.0 (2026-09-19)
+- [x] **PR-42H: Disable Zoom (Meta + CSS)**
+- [x] **PR-42I: Zoom Layout Fix (iOS Safari Fallback)**
+- [x] **PR-42J: Scroll Fade + Dim + Scale Animation**
+- [x] **PR-36: PDF Export CSS Upgrade**
+
+### Batch 6: Swipe & Reorder v2.6.1 (2026-09-19)
+- [x] **PR-42K: Swipe Gesture Fix (Edge Priority)**
+- [x] **PR-42L: Header Buttons Reorder**
+- [x] **PR-42M: Message Menu Smart Positioning**
+
+### Batch 7: Blank Fix v2.6.3 (2026-09-19)
+- [x] **PR-42N: Fix `chatContainer` ReferenceError**
+
+### Batch 8: Loading Overlay v2.6.4 (2026-09-19)
+- [x] **PR-42O: Full-Screen Loading Overlay**
+
+### Batch 9: Sidebar Cleanup v2.6.6 (2026-09-19)
+- [x] **PR-42P: Simplify Sidebar Header**
+- [x] **PR-42Q: Tombol Close Pindah ke Footer**
+- [x] **PR-42R: Bidirectional Swipe + Auto-Close**
+- [x] **PR-42S: Help Modal Update**
 
 ---
 
@@ -170,15 +174,15 @@
 
 ---
 
-### 🎯 ACTION F — PDF Export
+### 🎯 ACTION F — PDF Export Lanjutan
 **Files**: `templates/viewer.html`, `main.py`
 **Effort**: ~2-4 jam
 **Priority**: MEDIUM
-**Status**: DEFERRED
+**Status**: DEFERRED (sebagian udah done via PR-36)
 
-- [ ] **PR-36: Export Individual Convo to PDF**
-  - Note: Dengan UI baru v2.3.0, tombol PDF udah ada di dropdown `⋮`
-    (via `window.print()`). Yang kurang: print CSS tweak khusus + cleanup.
+- [ ] **PR-36B: Auto-Set PDF Title + Print Preview Tweak**
+  - Auto-set PDF title dari convo title.
+  - Print preview polish.
 
 ---
 
@@ -212,14 +216,143 @@
 **Status**: BACKLOG (butuh design dulu)
 
 - [ ] **PR-37: Category/Tag untuk Convo**
-  - Edit metadata manual via UI, filter di index.
-  - Butuh persistensi (di mana simpen tag?).
-  - File: `templates/viewer.html` + `tools/dist_index.py`.
-
 - [ ] **PR-38: Diff View**
-  - Bandingin 2 versi convo (kalo ada update).
-  - Butuh library diff + UI side-by-side.
-  - File: `templates/viewer.html`.
+
+---
+
+### 🎯 ACTION J — Import Platform Lain (Universal) ✨ NEW
+**Files**: `parsers/*.py`, `main.py`, `docs/*.md`
+**Effort**: ~14 jam (multi-sesi)
+**Priority**: MEDIUM-HIGH (Phase 5)
+**Status**: PLANNED (belum eksekusi)
+
+**Tujuan**: Support import dari platform AI lain (ChatGPT, Claude, Gemini,
+Mistral, Poe) dengan **auto-detect** + **universal parser framework**.
+
+#### 📐 Arsitektur (3 Layer)
+
+  ┌─────────────────────────────────────────┐
+  │ LAYER 1: DETECTOR                       │
+  │ - Cek struktur file (keys, fields)      │
+  │ - Cek filename pattern                  │
+  │ - Cek signature (magic bytes)           │
+  ├─────────────────────────────────────────┤
+  │ LAYER 2: PARSER REGISTRY                │
+  │ - ChatGPT, Claude, Gemini, DeepSeek...  │
+  │ - Universal fallback (generic)          │
+  ├─────────────────────────────────────────┤
+  │ LAYER 3: NORMALIZER                     │
+  │ - Semua parser return skema seragam     │
+  │ - {title, created_at, messages: [...]}  │
+  └─────────────────────────────────────────┘
+
+#### 📋 Sub-PR Breakdown
+
+- [ ] **PR-50: Universal Detector Framework**
+  - Bikin `parsers/universal_detector.py`.
+  - Auto-detect platform dari struktur file.
+  - Deteksi via:
+    * Filename pattern (misal `conversations.json` → ChatGPT)
+    * Key signature (misal `mapping` + `author` → ChatGPT)
+    * Key signature (misal `chat_messages` + role `human` → Claude)
+  - Return: platform name + parser class.
+  - **Effort**: ~2 jam.
+
+- [ ] **PR-51: ChatGPT Parser**
+  - Bikin `parsers/chatgpt_parser.py`.
+  - Handle format `conversations.json` (Settings → Data Controls → Export).
+  - Handle mapping tree dengan `parent_id`/`children`.
+  - Handle content types: `text`, `code`, `image`, `multimodal_text`.
+  - **Effort**: ~1.5 jam.
+  - **Sample**: Cari di GitHub gist (banyak yang share).
+
+- [ ] **PR-52: Claude Parser**
+  - Bikin `parsers/claude_parser.py`.
+  - Handle format export Claude (content blocks array).
+  - Role: `human` / `assistant` / `system`.
+  - Handle content blocks: `text`, `image`, `tool_use`, `tool_result`.
+  - **Effort**: ~1.5 jam.
+  - **Sample**: Schema docs + dummy.
+
+- [ ] **PR-53: Gemini Parser**
+  - Bikin `parsers/gemini_parser.py`.
+  - Handle Google Takeout format (HTML fragments, paling complex).
+  - Parse HTML: `<div>` per message, class-based detection.
+  - **Effort**: ~3 jam.
+  - **Sample**: Takeout export (bisa minta user kirim).
+
+- [ ] **PR-54: Mistral Le Chat Parser**
+  - Bikin `parsers/mistral_parser.py`.
+  - Format mirip Claude (content blocks).
+  - **Effort**: ~1 jam.
+
+- [ ] **PR-55: Poe Parser**
+  - Bikin `parsers/poe_parser.py`.
+  - Format JSON dari Poe export.
+  - **Effort**: ~1 jam.
+
+- [ ] **PR-56: Generic Fallback Parser**
+  - Bikin `parsers/generic_fallback.py`.
+  - Catch-all parser buat format yang gak dikenal.
+  - Heuristic: cari field `messages` / `chat` / `conversation`.
+  - Coba ekstrak: title, timestamp, role, content.
+  - Kalo gagal, kasih **error message jelas** + hint format yang didukung.
+  - **Effort**: ~1 jam.
+
+- [ ] **PR-57: Integrate Detector ke main.py**
+  - Update `main.py` — pake `universal_detector.detect_and_parse()`.
+  - Ganti `get_parser_for_file()` yang sekarang cuma cek extension.
+  - **Effort**: ~1 jam.
+
+- [ ] **PR-58: Per-Platform Testing**
+  - Bikin test case per platform.
+  - Sample file: bisa dari publik atau dummy.
+  - **Effort**: ~2 jam.
+
+- [ ] **PR-59: Docs — Tutorial Import Per Platform**
+  - Update `docs/STATE.md` — tambah section "Supported Platforms".
+  - Bikin `docs/IMPORT_GUIDE.md` (BARU) — step-by-step per platform.
+  - **Effort**: ~1 jam.
+
+#### 🎯 Platform Coverage
+
+| # | Platform | Format | Effort | Priority |
+|---|---|---|---|---|
+| 1 | **ChatGPT** | `conversations.json` (Settings export) | 1.5j | HIGH |
+| 2 | **Claude** | JSON (content blocks) | 1.5j | HIGH |
+| 3 | **Gemini** | Google Takeout (HTML fragments) | 3j | MEDIUM |
+| 4 | **Mistral** | JSON | 1j | MEDIUM |
+| 5 | **Poe** | JSON | 1j | LOW |
+| 6 | **Generic** | Fallback apapun | 1j | HIGH |
+
+#### ⏱️ Timeline (Multi-Sesi)
+
+- **Sesi 1** (~4 jam): Universal detector + ChatGPT + Generic fallback
+- **Sesi 2** (~4 jam): Claude + Mistral + integrate ke main.py
+- **Sesi 3** (~4 jam): Gemini + Poe
+- **Sesi 4** (~2 jam): Docs + testing + release v2.7.0-GW
+
+**Total**: ~14 jam, 4 sesi.
+
+#### ⚠️ Risiko & Catatan
+
+  - **Schema platform bisa berubah** — ChatGPT ganti format 3x dalam 2 tahun.
+    Parser harus **defensive** — cek field sebelum akses.
+  - **Sample file terbatas** — beberapa platform (Poe, Claude) susah dapet sample.
+    Solusi: bikin **dummy** berdasarkan schema docs.
+  - **Gemini paling complex** — Google Takeout format HTML, bukan JSON.
+    Butuh **HTML parser** (BeautifulSoup atau regex).
+  - **Performance** — auto-detect bisa **lambat** kalo file gede (100+ MB).
+    Solusi: **peek first 1KB** buat deteksi, bukan load full file.
+  - **Test coverage** — wajib test per platform **sebelum release**.
+    Bikin folder `tests/samples/` (gitignored) buat dummy.
+
+#### 📚 Referensi
+
+  - **ChatGPT export schema**: github.com/gpt4free/gpt4free (contoh)
+  - **Claude export**: docs.anthropic.com (export format)
+  - **Gemini Takeout**: support.google.com/takeout
+  - **ActivityPub / Data Portability**: activitypub.rocks
 
 ---
 
@@ -232,12 +365,18 @@
 | UI | Mobile Refactor | viewer.html | 3j | HIGH | ✅ Done |
 | CLI | User-Friendly Redesign | main.py, deepseek_backup.py | 2j | HIGH | ✅ Done |
 | D | Polish Backlog Lama | dist_index.py, main.py, sync.py | 2-3j | MEDIUM | ✅ Done |
-| C | Index Safety & Scale | dist_index.py, sync.py | 4-5j | HIGH | ⏳ **Next** |
+| MOBILE | Mobile Polish (v2.6.0) | viewer.html | 3j | HIGH | ✅ Done |
+| SWIPE | Swipe & Reorder (v2.6.1) | viewer.html | 1j | HIGH | ✅ Done |
+| BLANK | Blank Fix (v2.6.3) | viewer.html | 0.5j | HIGH | ✅ Done |
+| LOAD | Loading Overlay (v2.6.4) | viewer.html | 1.5j | MEDIUM | ✅ Done |
+| CLEAN | Sidebar Cleanup (v2.6.6) | viewer.html | 1j | MEDIUM | ✅ Done |
+| C | Index Safety & Scale | dist_index.py, sync.py | 4-5j | HIGH | ⏳ Next |
 | E | Perf & Onboarding | viewer.html, dist_index.py, json_parser.py | 3j | MEDIUM | ⏳ Pending |
-| F | PDF Export | viewer.html, main.py | 2-4j | MEDIUM | 🕐 Deferred |
+| F | PDF Export Lanjutan | viewer.html, main.py | 2-4j | MEDIUM | 🕐 Deferred |
 | G | CLI Convenience | main.py | 30m | LOW | ⏳ Pending |
 | H | Termux Integration | checklist.py, main.py | 1-2j | MEDIUM | ⏳ Pending |
 | I | Advanced Features | viewer.html, dist_index.py | 10-14j | LOW | 📋 Backlog |
+| **J** | **Import Platform Lain** | **parsers/*.py, main.py** | **14j** | **MEDIUM-HIGH** | **📋 Planned** |
 
 ---
 
@@ -247,18 +386,19 @@
 **Phase 2**: Live Backup + Parser Polish [✓✓✓✓✓] DONE
 **Phase 3**: Format Expansion + UI [✓✓✓✓✓] DONE
 **Phase 4**: Polish & Stabilization [✓✓✓✓ ] IN PROGRESS
-**Phase 5**: Advanced Features [      ] PENDING
+**Phase 5**: Import Platform Lain & Advanced [      ] PLANNED
 
 ---
 
 ## 🎯 Prioritas Berikutnya
 
-1. **Action C** — Index Safety & Scale (PR-41, PR-46, PR-48)
-2. **Action E** — Perf & Onboarding
-3. **Action G** — CLI Convenience (quick win 30 menit)
+1. **Action C** — Index Safety & Scale (PR-41, PR-46, PR-48) — 4-5 jam
+2. **Action E** — Perf & Onboarding — 3 jam
+3. **Action J** — Import Platform Lain (Phase 5) — 14 jam, multi-sesi
 
 ---
 
 **Last Updated:** 2026-09-19
 **Maintainer:** GhostWriter Dev Team (Multi-AI Collaboration)
-**Current Version:** v2.5.0-GW
+**Current Version:** v2.6.6-GW
+**Next Version:** v2.7.0-GW (Phase 5 — Import Platform Lain)
