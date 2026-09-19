@@ -45,12 +45,12 @@ MAGIC_SIGNATURES = [
 
 # === CUSTOM EXCEPTIONS ===
 class AuthExpiredError(Exception):
-    """FIX #1: Token expired / invalid — dipake buat mbedain dari error biasa."""
+    """Token expired / invalid — dipake buat mbedain dari error biasa."""
     pass
 
 
 class InvalidResponseError(Exception):
-    """FIX #2: Response dari API strukturnya gak valid."""
+    """Response dari API strukturnya gak valid."""
     pass
 
 
@@ -109,17 +109,7 @@ def _save_state(state: Dict[str, Any]):
 
 
 def _extract_biz_data(payload: Any) -> Dict[str, Any]:
-    """
-    FIX #2: Extract biz_data dari response, dengan guard clause.
-
-    Handle:
-        - payload None (JSON "null")
-        - payload bukan dict
-        - payload dict tapi gak ada "data"
-        - payload dict tapi "data" bukan dict
-
-    Return: dict kosong kalo gagal.
-    """
+    """Extract biz_data dari response, dengan guard clause."""
     if not isinstance(payload, dict):
         return {}
 
@@ -131,36 +121,24 @@ def _extract_biz_data(payload: Any) -> Dict[str, Any]:
     if isinstance(biz, dict):
         return biz
 
-    # Fallback: kadang biz_data langsung ada di "data"
     return data
 
 
 def _detect_auth_error(payload: Any) -> bool:
-    """
-    FIX #1: Detect apakah response nunjukin token expired / invalid.
-
-    Cek beberapa format:
-        - {"code": 401, "msg": "..."}
-        - {"code": 403, "msg": "..."}
-        - {"data": {"code": 401}}
-        - {"msg": "token expired"} / "invalid token" / "unauthorized"
-    """
+    """Detect apakah response nunjukin token expired / invalid."""
     if not isinstance(payload, dict):
         return False
 
-    # Cek "code" di top-level
     code = payload.get("code")
     if code in (401, 403):
         return True
 
-    # Cek "data.code"
     data = payload.get("data")
     if isinstance(data, dict):
         inner_code = data.get("code")
         if inner_code in (401, 403):
             return True
 
-    # Cek "msg" / "message"
     msg = str(payload.get("msg") or payload.get("message") or "").lower()
     auth_keywords = ("token expired", "invalid token", "unauthorized", "token invalid", "auth failed")
     if any(kw in msg for kw in auth_keywords):
@@ -257,9 +235,7 @@ class DeepSeekLiveBackup:
         self.session.headers.update(self.headers)
         self.pending_attachments: List[Dict[str, Any]] = []
         self._processed_attachments = set()
-        # FIX PR-31: circuit breaker attachment
         self._attachment_download_disabled = False
-        # FIX #1: flag token expired (biar handler di main.py bisa baca)
         self.token_expired = False
         os.makedirs(self.download_dir, exist_ok=True)
         self.state = _load_state()
@@ -283,9 +259,7 @@ class DeepSeekLiveBackup:
         return None
 
     def _safe_json(self, res: requests.Response) -> Any:
-        """
-        FIX #2: Parse JSON dengan aman. Return None kalo gagal.
-        """
+        """Parse JSON dengan aman. Return None kalo gagal."""
         if res is None:
             return None
         try:
@@ -294,20 +268,14 @@ class DeepSeekLiveBackup:
             return None
 
     def _check_auth_from_response(self, res: requests.Response) -> bool:
-        """
-        FIX #1: Cek apakah response nunjukin token expired.
-
-        Return True kalo token expired (dan set self.token_expired).
-        """
+        """Cek apakah response nunjukin token expired."""
         if res is None:
             return False
 
-        # HTTP 401/403 = jelas auth issue
         if res.status_code in (401, 403):
             self.token_expired = True
             return True
 
-        # Cek body JSON
         payload = self._safe_json(res)
         if _detect_auth_error(payload):
             self.token_expired = True
@@ -321,17 +289,14 @@ class DeepSeekLiveBackup:
         if res is None:
             return False
 
-        # FIX #1: cek HTTP status dulu
         if res.status_code != 200:
             if res.status_code in (401, 403):
                 self.token_expired = True
             return False
 
-        # FIX #1: cek body — kadang HTTP 200 tapi body-nya auth error
         if self._check_auth_from_response(res):
             return False
 
-        # Pastiin body-nya valid dict
         payload = self._safe_json(res)
         if not isinstance(payload, dict):
             return False
@@ -353,21 +318,19 @@ class DeepSeekLiveBackup:
                 if next_page_id:
                     params["next_page_id"] = next_page_id
 
-                spinner.update(f"Fetch page {page}... ({len(all_sessions)} sesi)")
+                spinner.update(f"Fetch page {page}... ({len(all_sessions)} obrolan)")
 
                 res = self._request("GET", url, params=params)
 
-                # FIX #1: cek auth expired dulu
                 if self._check_auth_from_response(res):
                     spinner.stop("Token expired — silakan login ulang", status="error")
-                    raise AuthExpiredError("Token expired saat fetch session list")
+                    raise AuthExpiredError("Token expired saat fetch daftar obrolan")
 
                 if res is None or res.status_code != 200:
                     status = res.status_code if res else "no-response"
                     spinner.stop(f"Gagal fetch page {page} (Status {status})", status="error")
                     break
 
-                # FIX #2: safe parse
                 data = self._safe_json(res)
                 if not isinstance(data, dict):
                     spinner.stop(
@@ -376,7 +339,6 @@ class DeepSeekLiveBackup:
                     )
                     break
 
-                # FIX #2: extract biz pake helper yang aman
                 biz = _extract_biz_data(data)
                 sessions = (
                     biz.get("chat_sessions")
@@ -385,7 +347,6 @@ class DeepSeekLiveBackup:
                     or []
                 )
 
-                # FIX #2: pastiin sessions list
                 if not isinstance(sessions, list):
                     sessions = []
 
@@ -416,7 +377,7 @@ class DeepSeekLiveBackup:
                 _human_delay(f"Pindah ke page {page + 1}")
         finally:
             if spinner.running:
-                spinner.stop(f"Selesai — {len(all_sessions)} sesi diambil", status="ok")
+                spinner.stop(f"Selesai — {len(all_sessions)} obrolan diambil", status="ok")
 
         return all_sessions
 
@@ -425,19 +386,21 @@ class DeepSeekLiveBackup:
         params = {"chat_session_id": session_id}
         res = self._request("GET", url, params=params, timeout=25)
 
-        # FIX #1: cek auth expired
         if self._check_auth_from_response(res):
-            raise AuthExpiredError("Token expired saat fetch session detail")
+            raise AuthExpiredError("Token expired saat fetch detail obrolan")
 
         if res is None or res.status_code != 200:
             return None
 
-        # FIX #2: safe parse
         data = self._safe_json(res)
         if not isinstance(data, dict):
             return None
 
         return _extract_biz_data(data)
+
+    # ============================================================
+    # STATE MANAGEMENT (PER-OBROLAN)
+    # ============================================================
 
     def _get_last_message_id(self, session_id: str) -> Optional[int]:
         return self.state.get("sessions", {}).get(session_id, {}).get("last_message_id")
@@ -449,6 +412,10 @@ class DeepSeekLiveBackup:
             self.state["sessions"][session_id] = {}
         self.state["sessions"][session_id]["last_message_id"] = message_id
         self.state["sessions"][session_id]["updated_at"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+
+    # ============================================================
+    # MESSAGE PARSING
+    # ============================================================
 
     def _resolve_role(self, msg, fragments):
         for key in ("role", "author", "sender"):
@@ -501,9 +468,15 @@ class DeepSeekLiveBackup:
                 return ""
         return str(raw)
 
+    # ============================================================
+    # ATTACHMENT DOWNLOAD
+    # ============================================================
+
     def download_attachment(self, file_id, file_name, file_size=None, skip_if_local=False):
         save_path = os.path.join(self.download_dir, file_name)
         attachment_key = (file_id, file_name)
+
+        # === EARLY RETURNS (sebelum delay & network) ===
 
         if attachment_key in self._processed_attachments:
             return "skipped"
@@ -517,7 +490,7 @@ class DeepSeekLiveBackup:
         if skip_if_local:
             return "skipped"
 
-        # FIX PR-31: circuit breaker
+        # Circuit breaker aktif
         if self._attachment_download_disabled:
             self.pending_attachments.append({
                 "file_name": file_name, "file_id": file_id,
@@ -637,14 +610,20 @@ class DeepSeekLiveBackup:
                 _add(f)
         return collected
 
+    # ============================================================
+    # BACKUP OBROLAN (MAIN FLOW)
+    # ============================================================
+
     def backup_session(self, session: Dict[str, Any], debug: bool = False,
                        session_label: str = "") -> Optional[Dict[str, Any]]:
         s_id = session.get("id")
-        title = session.get("title") or "DeepSeek Chat"
+        title = session.get("title") or "Tanpa Judul"
 
-        print_kv("Session ID", s_id[:12] + "..." if s_id else "-")
+        # FIX v2.4.0: title dalam quote biar jelas ini judul obrolan
+        print_kv("Obrolan", f'💬 "{title}"')
+        print_kv("ID", s_id[:12] + "..." if s_id else "-")
 
-        spinner = LoadingSpinner(f"Fetching detail '{title}'...")
+        spinner = LoadingSpinner(f'Mengambil isi obrolan...')
         spinner.start()
         detail = None
         try:
@@ -654,9 +633,9 @@ class DeepSeekLiveBackup:
             raise
         finally:
             if detail:
-                spinner.stop(f"Detail '{title}' diambil", status="ok")
+                spinner.stop(f'Isi obrolan berhasil diambil', status="ok")
             elif not self.token_expired:
-                spinner.stop(f"Gagal ambil detail '{title}'", status="error")
+                spinner.stop(f'Gagal ambil isi obrolan', status="error")
 
         if not detail:
             return None
@@ -675,7 +654,7 @@ class DeepSeekLiveBackup:
             chat_messages = []
 
         total_msgs = len(chat_messages)
-        print_info(f"{total_msgs} node pesan mentah terdeteksi")
+        print_info(f"{total_msgs} pesan terdeteksi")
 
         if not chat_messages:
             return None
@@ -690,10 +669,10 @@ class DeepSeekLiveBackup:
 
         if prev_last_id is not None and last_message_id is not None:
             if last_message_id == prev_last_id:
-                print_info(f"Sesi '{title}' gak ada update (last_id={last_message_id}). Skip.")
+                print_info(f'Obrolan ini gak ada update. Skip.')
                 return None
             else:
-                print_info(f"Sesi '{title}' ada update ({prev_last_id} -> {last_message_id})")
+                print_info(f'Ada update baru ({prev_last_id} → {last_message_id})')
 
         mp = MessageProgress(session_label)
         mp.set_total(total_msgs)
@@ -751,7 +730,7 @@ class DeepSeekLiveBackup:
 
         if self.pending_attachments:
             pending_now = len(self.pending_attachments)
-            print_warn(f"{pending_now} attachment pending manual")
+            print_warn(f"📎 {pending_now} lampiran perlu taruh manual")
 
         if last_message_id is not None:
             self._update_last_message_id(s_id, last_message_id)
@@ -764,6 +743,10 @@ class DeepSeekLiveBackup:
             "updated_at": self._normalize_timestamp(session.get("updated_at")),
             "mapping": mapping,
         }
+
+    # ============================================================
+    # PENDING MANIFEST
+    # ============================================================
 
     def write_pending_manifest(self) -> Optional[str]:
         if not self.pending_attachments:
@@ -781,25 +764,32 @@ class DeepSeekLiveBackup:
             unique.append(item)
 
         lines = [
-            "# Attachment Pending — Perlu Taruh Manual",
+            "# 📎 Lampiran Pending — Perlu Taruh Manual",
             "",
-            "File-file di bawah ini terdeteksi sebagai attachment di chat DeepSeek,",
-            "tapi **tidak bisa di-download otomatis** karena endpoint API balikin HTML.",
+            "File-file di bawah ini terdeteksi sebagai lampiran di obrolan DeepSeek,",
+            "tapi **tidak bisa di-download otomatis** karena DeepSeek balikin HTML challenge.",
             "",
-            "## Cara Fix",
+            "## 🔧 Cara Fix (5 menit)",
             "",
-            "1. Buka chat asli di browser DeepSeek",
-            "2. Klik attachment -> Save As -> simpan ke folder `./attachments/`",
-            "3. Pastikan **nama file persis sama** dengan yang di bawah",
-            "4. Re-run GhostWriter — file akan otomatis ke-resolve via Base64 injection",
+            "1. **Buka obrolan asli** di browser DeepSeek",
+            "2. **Klik lampiran** → Save As / Download",
+            "3. **Simpan ke folder** `./attachments/` (nama file harus persis sama)",
+            "4. **Re-render** obrolan — file bakal otomatis ke-resolve via Base64 injection",
             "",
-            "## Daftar File",
+            "## 📋 Daftar File yang Perlu Di-download",
             "",
         ]
         for item in unique:
             size_str = f" (~{item['file_size']} bytes)" if item.get("file_size") else ""
             reason = item.get("reason", "unknown")
             lines.append(f"- `{item['file_name']}`{size_str} — alasan: `{reason}`")
+
+        lines.extend([
+            "",
+            "---",
+            "",
+            "*Manifest ini auto-generated oleh GhostWriter. Re-run backup buat update.*",
+        ])
 
         content = "\n".join(lines) + "\n"
         with open(manifest_path, "w", encoding="utf-8") as f:
