@@ -2,7 +2,7 @@
 <html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>{{ title | default('GhostWriter Archive') }}</title>
   {{ favicon_link | safe }}
 
@@ -33,9 +33,6 @@
       --green: #4ade80;
       --yellow: #facc15;
       --red: #f87171;
-      --header-h: auto;
-      --stats-h: auto;
-      --searchbar-h: auto;
     }
 
     html[data-theme="light"] {
@@ -77,6 +74,9 @@
       overflow: hidden;
       transition: background 0.3s ease, color 0.3s ease;
       padding-bottom: env(safe-area-inset-bottom, 0px);
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
 
     /* === BRAND === */
@@ -403,11 +403,10 @@
     }
 
     .header-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .header-btn.active { border-color: var(--accent); color: var(--accent); }
 
-    /* === DROPDOWN MENU (Header ⋮) === */
-    .header-menu-wrapper {
-      position: relative;
-    }
+    /* === HEADER MENU (⋮) === */
+    .header-menu-wrapper { position: relative; }
 
     .header-menu-dropdown {
       position: absolute;
@@ -445,10 +444,9 @@
     }
 
     .header-menu-item:hover { background: var(--bg-surface); color: var(--accent); }
-
     .header-menu-item .icon { font-size: 0.9rem; width: 16px; text-align: center; }
 
-    /* === STATS BAR (baru: di bawah header, sticky) === */
+    /* === STATS BAR === */
     .stats-bar {
       padding: 8px 16px;
       border-bottom: 1px solid var(--border-color);
@@ -484,12 +482,49 @@
       scroll-padding-bottom: 24px;
     }
 
+    /* === PR-42J: SCROLL FADE + DIM + SCALE === */
     .message-row {
       display: flex;
       gap: 16px;
       width: 100%;
       position: relative;
       scroll-margin-top: 80px;
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: opacity, transform;
+      transform-origin: center center;
+    }
+
+    .message-row.fade-active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      transition-duration: 0.5s;
+    }
+
+    .message-row.fade-dim-above {
+      opacity: 0.4;
+      transform: translateY(-8px) scale(0.98);
+      transition-duration: 0.4s;
+    }
+
+    .message-row.fade-dim-below {
+      opacity: 0.5;
+      transform: translateY(8px) scale(0.99);
+      transition-duration: 0.4s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .message-row,
+      .message-row.fade-active,
+      .message-row.fade-dim-above,
+      .message-row.fade-dim-below {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        will-change: auto;
+      }
     }
 
     .message-row.user { justify-content: flex-end; }
@@ -543,7 +578,6 @@
       color: var(--text-main);
     }
 
-    /* === BUBBLE META === */
     .bubble-meta {
       display: flex;
       align-items: center;
@@ -574,11 +608,7 @@
     .message-row:hover .copy-msg-btn { opacity: 0.7; }
     .copy-msg-btn:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
 
-    /* === MESSAGE MENU === */
-    .msg-menu-wrapper {
-      position: relative;
-      display: inline-block;
-    }
+    .msg-menu-wrapper { position: relative; display: inline-block; }
 
     .msg-menu-btn {
       opacity: 0;
@@ -652,7 +682,6 @@
 
     .message-row.user .attachment-badge { align-self: flex-end; }
 
-    /* === ATTACHMENT CARD === */
     .attachment-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; width: 100%; }
 
     .attachment-box {
@@ -742,7 +771,6 @@
     .markdown-body th, .markdown-body td { border: 1px solid var(--border-subtle); padding: 9px 13px; text-align: left; }
     .markdown-body th { background-color: var(--bg-surface); color: var(--accent); }
 
-    /* === THINKING BLOCK === */
     .markdown-body details {
       background: var(--purple-glow);
       border: 1px solid rgba(139, 92, 246, 0.3);
@@ -775,12 +803,10 @@
       color: var(--text-muted);
     }
 
-    /* === KATEX === */
     .katex-display { margin: 14px 0 !important; overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
     .katex { font-size: 1.05em; }
     .katex-error { color: var(--red) !important; background: rgba(248, 113, 113, 0.1); padding: 2px 6px; border-radius: 4px; }
 
-    /* === COLLAPSIBLE === */
     .bubble.collapsible { position: relative; max-height: 420px; overflow: hidden; transition: max-height 0.35s ease; }
 
     .bubble.collapsible::after {
@@ -825,7 +851,6 @@
     .collapse-toggle .icon { display: inline-block; transition: transform 0.25s ease; }
     .collapse-toggle.expanded .icon { transform: rotate(180deg); }
 
-    /* === SEARCH HIGHLIGHT === */
     mark.search-highlight {
       background: var(--highlight-match);
       color: inherit;
@@ -838,7 +863,7 @@
       outline: 2px solid var(--accent);
     }
 
-    /* === SEARCH BAR (bottom, sticky) — BARU === */
+    /* === SEARCH BAR === */
     .search-bar {
       padding: 10px 16px;
       padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
@@ -892,9 +917,7 @@
       min-width: 0;
     }
 
-    .search-main input[type="text"]::placeholder {
-      color: var(--text-muted);
-    }
+    .search-main input[type="text"]::placeholder { color: var(--text-muted); }
 
     .search-counter {
       font-size: 0.75rem;
@@ -930,17 +953,9 @@
       flex-shrink: 0;
     }
 
-    .search-action-btn:hover {
-      background: var(--bg-secondary);
-      color: var(--accent);
-    }
+    .search-action-btn:hover { background: var(--bg-secondary); color: var(--accent); }
+    .search-action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-    .search-action-btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-
-    /* Row kedua: prev/next nav (cuma muncul kalo search aktif) */
     .search-nav-row {
       display: none;
       justify-content: center;
@@ -948,9 +963,7 @@
       padding-top: 2px;
     }
 
-    .search-bar.searching .search-nav-row {
-      display: flex;
-    }
+    .search-bar.searching .search-nav-row { display: flex; }
 
     .search-nav-btn {
       background: var(--bg-surface);
@@ -967,21 +980,14 @@
       font-family: inherit;
     }
 
-    .search-nav-btn:hover:not(:disabled) {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
+    .search-nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .search-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    .search-nav-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    /* === FLOATING NAV (pindah ke atas search bar) === */
+    /* === FLOATING NAV === */
     .floating-nav {
       position: absolute;
       right: 24px;
-      bottom: 80px;  /* di atas search bar */
+      bottom: 80px;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -1017,7 +1023,7 @@
 
     .floating-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
 
-    /* === PR-42: SHORTCUT HELP MODAL === */
+    /* === HELP MODAL === */
     .help-modal-overlay {
       position: fixed;
       inset: 0;
@@ -1086,7 +1092,6 @@
     }
 
     .help-modal-close:hover { border-color: var(--red); color: var(--red); }
-
     .help-modal-body { padding: 18px 22px; }
     .help-section { margin-bottom: 22px; }
     .help-section:last-child { margin-bottom: 0; }
@@ -1164,6 +1169,35 @@
     .gw-toast.success { border-color: var(--green); }
     .gw-toast.error { border-color: var(--red); }
 
+    /* === ZOOM FIX === */
+    body.zoomed .right-rail {
+      position: fixed !important;
+      right: 0 !important;
+      top: 0 !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      margin-right: 0 !important;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    body.zoomed .right-rail:not(.collapsed) { transform: translateX(0); }
+
+    body.zoomed .sidebar {
+      position: fixed !important;
+      left: 0 !important;
+      top: 0 !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      margin-left: 0 !important;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    body.zoomed .sidebar:not(.collapsed) { transform: translateX(0); }
+
     /* === RESPONSIVE === */
     @media (max-width: 1024px) {
       .right-rail {
@@ -1197,11 +1231,7 @@
       .copy-msg-btn, .msg-menu-btn { opacity: 0.7; }
       .header-subtitle { display: none; }
 
-      .stats-bar {
-        font-size: 0.65rem;
-        gap: 10px;
-        padding: 6px 12px;
-      }
+      .stats-bar { font-size: 0.65rem; gap: 10px; padding: 6px 12px; }
 
       .search-bar {
         padding: 8px 12px;
@@ -1213,56 +1243,44 @@
       .floating-nav { right: 12px; bottom: 72px; }
       .floating-btn { width: 36px; height: 36px; font-size: 0.9rem; }
 
-      .right-rail {
-        width: 260px;
-        height: 100vh;
-        height: 100dvh;
-      }
+      .right-rail { width: 260px; height: 100vh; height: 100dvh; }
     }
 
     @media (max-width: 500px) {
       .stats-bar span:not(:first-child) { display: none; }
     }
 
-    /* === MOBILE VIEWPORT === */
     @supports (height: 100dvh) {
-      body,
-      .main-area {
-        height: 100dvh;
-      }
-
-      .sidebar,
-      .right-rail {
-        height: 100dvh;
-      }
+      body, .main-area { height: 100dvh; }
+      .sidebar, .right-rail { height: 100dvh; }
     }
 
-    /* === KEYBOARD ACTIVE (mobile) === */
-    body.keyboard-active .main-area {
-      height: var(--vv-height, 100dvh);
-    }
+    body.keyboard-active .main-area { height: var(--vv-height, 100dvh); }
+    body.keyboard-active .stats-bar { display: none; }
+    body.keyboard-active .search-bar { padding-bottom: 8px; }
 
-    body.keyboard-active .stats-bar {
-      display: none;
-    }
-
-    body.keyboard-active .search-bar {
-      padding-bottom: 8px;
-    }
-
-    /* === PRINT === */
+    /* === PRINT / PDF EXPORT === */
     @media print {
+      @page { margin: 1.5cm 1.2cm 1.8cm 1.2cm; size: A4; }
+      @page :first { margin-top: 0.8cm; }
+
       body {
         background: #ffffff !important;
-        color: #000000 !important;
+        color: #1a1a1a !important;
         display: block !important;
         overflow: visible !important;
         height: auto !important;
+        font-family: Georgia, "Times New Roman", serif !important;
+        font-size: 11pt !important;
+        line-height: 1.6 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
 
       .sidebar, .right-rail, .floating-nav, .sidebar-overlay, .right-rail-overlay,
-      .copy-msg-btn, .msg-menu-wrapper, .collapse-toggle, .header-tools,
-      .stats-bar, .search-bar, .sidebar-toggle, .help-modal-overlay, .gw-toast {
+      .copy-msg-btn, .msg-menu-wrapper, .msg-menu-dropdown, .collapse-toggle,
+      .header-tools, .stats-bar, .search-bar, .sidebar-toggle, .help-modal-overlay,
+      .gw-toast, .avatar {
         display: none !important;
       }
 
@@ -1273,41 +1291,146 @@
         border-bottom: 2px solid #000 !important;
         background: #ffffff !important;
         color: #000000 !important;
+        padding: 0 0 10px 0 !important;
+        margin-bottom: 20px !important;
+        page-break-after: avoid;
       }
 
-      .header-title { color: #000000 !important; }
+      .header-title {
+        color: #000000 !important;
+        font-family: Georgia, serif !important;
+        font-size: 16pt !important;
+        font-weight: bold !important;
+      }
+
+      .header-subtitle { color: #666666 !important; font-size: 9pt !important; }
+      .header-info { display: block !important; }
+      .status-dot { display: none !important; }
 
       .chat-container {
         max-width: 100% !important;
         overflow: visible !important;
-        padding: 20px 0 !important;
+        padding: 0 !important;
         height: auto !important;
+        gap: 16px !important;
       }
 
+      .message-row {
+        page-break-inside: avoid;
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+        margin-bottom: 12px !important;
+      }
+
+      .message-row.fade-dim-above,
+      .message-row.fade-dim-below { opacity: 1 !important; transform: none !important; }
+
       .bubble {
-        color: #000000 !important;
+        color: #1a1a1a !important;
         border: 1px solid #cccccc !important;
         background: #ffffff !important;
+        font-family: Georgia, "Times New Roman", serif !important;
+        font-size: 11pt !important;
+        line-height: 1.6 !important;
+        padding: 10px 14px !important;
+        border-radius: 6px !important;
         page-break-inside: avoid;
       }
 
-      .message-row.user .bubble { background: #f0f9ff !important; }
+      .message-row.user .bubble { background: #f0f7ff !important; border-left: 3px solid #0284c7 !important; }
+      .message-row.ai .bubble { background: #fafafa !important; border-left: 3px solid #666666 !important; }
+
+      .message-row.user .bubble::before {
+        content: "USER";
+        display: block;
+        font-size: 8pt;
+        font-weight: bold;
+        color: #0284c7;
+        margin-bottom: 6px;
+        letter-spacing: 1px;
+        font-family: Arial, sans-serif;
+      }
+
+      .message-row.ai .bubble::before {
+        content: "AI";
+        display: block;
+        font-size: 8pt;
+        font-weight: bold;
+        color: #666666;
+        margin-bottom: 6px;
+        letter-spacing: 1px;
+        font-family: Arial, sans-serif;
+      }
+
       .bubble.collapsible { max-height: none !important; overflow: visible !important; }
       .bubble.collapsible::after { display: none !important; }
 
       .markdown-body pre {
-        background: #f8f8f8 !important;
+        background: #f5f5f5 !important;
         border: 1px solid #cccccc !important;
         box-shadow: none !important;
         page-break-inside: avoid;
+        font-size: 9pt !important;
       }
 
-      .code-header { background: #eeeeee !important; color: #000000 !important; border-bottom: 1px solid #cccccc !important; }
+      .code-header {
+        background: #e8e8e8 !important;
+        color: #000000 !important;
+        border-bottom: 1px solid #cccccc !important;
+        font-size: 8pt !important;
+        padding: 4px 10px !important;
+      }
+
       .copy-btn { display: none !important; }
-      .markdown-body pre code { color: #000000 !important; }
-      .attachment-box { border: 1px solid #cccccc !important; background: #ffffff !important; }
-      mark.search-highlight { background: #ffff00 !important; color: #000000 !important; }
+
+      .markdown-body pre code {
+        color: #1a1a1a !important;
+        font-family: "Courier New", monospace !important;
+        font-size: 9pt !important;
+        padding: 10px !important;
+      }
+
+      .markdown-body p { margin-bottom: 8px !important; }
+
+      .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+        color: #000000 !important;
+        page-break-after: avoid;
+        font-family: Georgia, serif !important;
+      }
+
+      .markdown-body th { background: #f0f0f0 !important; color: #000000 !important; }
+
+      .markdown-body th, .markdown-body td {
+        border: 1px solid #cccccc !important;
+        padding: 6px 10px !important;
+        font-size: 10pt !important;
+      }
+
+      .markdown-body details {
+        background: #f9f9f9 !important;
+        border: 1px solid #cccccc !important;
+        border-left: 3px solid #7c3aed !important;
+        page-break-inside: avoid;
+      }
+
+      .markdown-body details summary { color: #5b21b6 !important; }
+
+      .attachment-box { border: 1px solid #cccccc !important; background: #f9f9f9 !important; page-break-inside: avoid; }
+      .attachment-preview-img { max-height: 150px !important; }
       a { color: #0066cc !important; text-decoration: underline; }
+
+      .chat-container::after { content: ""; display: block; height: 1cm; }
+
+      body::after {
+        content: "GhostWriter — " counter(page) " / " counter(pages);
+        position: fixed;
+        bottom: 0.6cm;
+        right: 1.2cm;
+        font-size: 8pt;
+        color: #888888;
+        font-family: Arial, sans-serif;
+      }
     }
   </style>
 </head>
@@ -1317,7 +1440,7 @@
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
   <div class="right-rail-overlay" id="right-rail-overlay"></div>
 
-  <!-- === PR-42: HELP MODAL === -->
+  <!-- === HELP MODAL === -->
   <div class="help-modal-overlay" id="help-modal-overlay">
     <div class="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard Shortcuts">
       <div class="help-modal-header">
@@ -1379,6 +1502,18 @@
         </div>
 
         <div class="help-section">
+          <div class="help-section-title">📱 Mobile Gesture</div>
+          <div class="help-row">
+            <span class="help-label">Buka sidebar (kiri)</span>
+            <span class="help-keys"><span class="kbd">Swipe →</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Buka navigasi user (kanan)</span>
+            <span class="help-keys"><span class="kbd">Swipe ←</span></span>
+          </div>
+        </div>
+
+        <div class="help-section">
           <div class="help-section-title">💬 Pesan</div>
           <div class="help-row">
             <span class="help-label">Copy pesan (hover dulu)</span>
@@ -1417,7 +1552,7 @@
     <div class="sidebar-footer">
       <div class="sidebar-footer-brand">
         <span>👻</span>
-        <span>v2.3.0-GW</span>
+        <span>v2.6.1-GW</span>
       </div>
       <div class="sidebar-footer-actions">
         <button class="sidebar-icon-btn" id="sidebar-theme-toggle" title="Toggle tema">🌙</button>
@@ -1428,7 +1563,7 @@
   <!-- === MAIN AREA === -->
   <div class="main-area">
 
-    <!-- HEADER (SLIM) -->
+    <!-- HEADER (SLIM) — v2.6.1: Reorder [?, 🌙, ⋮, 👤] -->
     <header id="main-header">
       <div class="header-info">
         <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">☰</button>
@@ -1445,18 +1580,16 @@
         <div class="header-menu-wrapper">
           <button class="header-btn" id="header-menu-toggle" title="Menu lainnya">⋮</button>
           <div class="header-menu-dropdown" id="header-menu-dropdown">
-            <button class="header-menu-item" data-action="toggle-right-rail">
-              <span class="icon">👤</span> Toggle Navigasi User
-            </button>
             <button class="header-menu-item" data-action="print">
               <span class="icon">🖨</span> Print / Save as PDF
             </button>
           </div>
         </div>
+        <button class="header-btn" id="right-rail-toggle" title="Toggle navigasi user">👤</button>
       </div>
     </header>
 
-    <!-- STATS BAR (di bawah header, sticky) -->
+    <!-- STATS BAR -->
     <div class="stats-bar" id="stats-bar">
       <span><span class="stat-icon">📊</span><strong id="stat-msgs">{{ messages|length }}</strong> pesan</span>
       <span><span class="stat-icon">📝</span><strong id="stat-chars">—</strong> char</span>
@@ -1470,7 +1603,7 @@
         {% set raw_len = (msg.content or '')|length %}
         {% set is_long = raw_len > 800 %}
         {% if msg.role == 'user' %}
-          <div class="message-row user" data-role="user" data-msg-index="{{ loop.index0 }}">
+          <div class="message-row user" data-role="user" data-msg-index="{{ loop.index0 }}" id="msg-{{ loop.index0 }}">
             <div class="bubble-wrapper">
               <div class="bubble markdown-body {% if is_long %}collapsible{% endif %}" data-raw="{{ msg.content }}" data-length="{{ raw_len }}"></div>
               <div class="bubble-meta">
@@ -1491,7 +1624,7 @@
             </div>
           </div>
         {% else %}
-          <div class="message-row ai" data-role="assistant" data-msg-index="{{ loop.index0 }}">
+          <div class="message-row ai" data-role="assistant" data-msg-index="{{ loop.index0 }}" id="msg-{{ loop.index0 }}">
             <div class="avatar ai">AI</div>
             <div class="bubble-wrapper">
               <div class="bubble markdown-body {% if is_long %}collapsible{% endif %}" data-raw="{{ msg.content }}" data-length="{{ raw_len }}"></div>
@@ -1516,13 +1649,13 @@
       {% endfor %}
     </main>
 
-    <!-- FLOATING NAV (di atas search bar) -->
+    <!-- FLOATING NAV -->
     <div class="floating-nav" id="floating-nav">
       <button class="floating-btn" id="scroll-top" title="Ke atas (Home)">▲</button>
       <button class="floating-btn" id="scroll-bottom" title="Ke bawah (End)">▼</button>
     </div>
 
-    <!-- SEARCH BAR (bottom, sticky) -->
+    <!-- SEARCH BAR -->
     <div class="search-bar" id="search-bar">
       <div class="search-bar-inner">
         <div class="search-main">
@@ -1556,10 +1689,8 @@
   <script src="../../vendor/highlight.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js';"></script>
   <script src="../../vendor/katex.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';"></script>
   <script src="../../vendor/katex-auto-render.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js';"></script>
-
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const COLLAPSE_THRESHOLD = 800;
       const STORAGE_KEY_THEME = "gw-theme";
       const STORAGE_KEY_SCROLL = "gw-scroll-" + (document.getElementById("chat-title")?.textContent || "").trim();
 
@@ -1908,7 +2039,7 @@
 
       document.addEventListener("click", closeAllMsgMenus);
 
-      // ===== STEP 10: SEARCH (REFACTORED — pake search bar di bottom) =====
+      // ===== STEP 10: SEARCH =====
       const searchBar = document.getElementById("search-bar");
       const searchInput = document.getElementById("search-input");
       const searchCount = document.getElementById("search-count");
@@ -1963,6 +2094,7 @@
         const textNodes = [];
         let node;
         while ((node = walker.nextNode())) textNodes.push(node);
+
         textNodes.forEach(textNode => {
           const text = textNode.nodeValue;
           const lowerText = text.toLowerCase();
@@ -1983,6 +2115,7 @@
           if (cursor < text.length) frag.appendChild(document.createTextNode(text.slice(cursor)));
           textNode.parentNode.replaceChild(frag, textNode);
         });
+
         searchCount.textContent = searchMatches.length > 0 ? `${searchMatches.length}` : "0";
         if (searchMatches.length > 0) {
           activeMatchIndex = 0;
@@ -2038,11 +2171,10 @@
         focusMatch(activeMatchIndex);
       });
 
-      // ===== STEP 11: FLOATING NAV + HEADER SHADOW =====
+      // ===== STEP 11: FLOATING NAV =====
       const floatingNav = document.getElementById("floating-nav");
       const scrollTopBtn = document.getElementById("scroll-top");
       const scrollBottomBtn = document.getElementById("scroll-bottom");
-      const mainHeader = document.getElementById("main-header");
 
       chatContainer.addEventListener("scroll", () => {
         const scrollTop = chatContainer.scrollTop;
@@ -2149,6 +2281,10 @@
       rightRailClose?.addEventListener("click", closeRightRail);
       rightRailOverlay?.addEventListener("click", closeRightRail);
 
+      // NEW v2.6.1: Direct profile button toggle
+      const rightRailToggle = document.getElementById("right-rail-toggle");
+      rightRailToggle?.addEventListener("click", toggleRightRail);
+
       buildUserNav();
 
       // ===== STEP 13: THEME TOGGLE =====
@@ -2163,7 +2299,7 @@
         try { localStorage.setItem(STORAGE_KEY_THEME, next); } catch (e) {}
       });
 
-      // ===== STEP 14: HEADER MENU (⋮) =====
+      // ===== STEP 14: HEADER MENU (⋮ — cuma Print) =====
       const headerMenuToggle = document.getElementById("header-menu-toggle");
       const headerMenuDropdown = document.getElementById("header-menu-dropdown");
 
@@ -2190,8 +2326,7 @@
         item.addEventListener("click", (e) => {
           e.stopPropagation();
           const action = item.getAttribute("data-action");
-          if (action === "toggle-right-rail") toggleRightRail();
-          else if (action === "print") window.print();
+          if (action === "print") window.print();
           closeHeaderMenu();
         });
       });
@@ -2272,7 +2407,7 @@
       if (window.innerWidth > 1024) openRightRail();
       else document.body.classList.add("right-rail-collapsed");
 
-      // ===== STEP 16B: VISUAL VIEWPORT (keyboard mobile) =====
+      // ===== STEP 16B: VISUAL VIEWPORT =====
       (function setupVisualViewport() {
         if (!window.visualViewport) return;
 
@@ -2290,7 +2425,127 @@
         vv.addEventListener("scroll", updateViewportHeight);
       })();
 
-      // ===== STEP 17: STATS (pindah ke stats-bar) =====
+      // ===== STEP 16C: SWIPE GESTURE (v2.6.1 FIXED) =====
+      (function setupSwipeGestures() {
+        const EDGE_ZONE = 50;
+        const SWIPE_THRESHOLD = 50;
+        const MAX_VERTICAL = 100;
+        const MAX_DURATION = 800;
+
+        let startX = 0;
+        let startY = 0;
+        let startTime = 0;
+        let startTarget = null;
+        let tracking = false;
+        let fromEdge = false;
+
+        function isInteractive(el) {
+          while (el && el !== document.body) {
+            const tag = el.tagName?.toLowerCase();
+            if (["input", "textarea", "button", "code", "pre", "a",
+                 "select", "video", "audio"].includes(tag)) {
+              return true;
+            }
+            el = el.parentElement;
+          }
+          return false;
+        }
+
+        document.addEventListener("touchstart", (e) => {
+          if (e.touches.length !== 1) {
+            tracking = false;
+            return;
+          }
+
+          const touch = e.touches[0];
+          startX = touch.clientX;
+          startY = touch.clientY;
+          startTime = Date.now();
+          startTarget = e.target;
+
+          fromEdge = startX <= EDGE_ZONE || startX >= window.innerWidth - EDGE_ZONE;
+
+          if (!fromEdge && isInteractive(startTarget)) {
+            tracking = false;
+            return;
+          }
+
+          tracking = true;
+        }, { passive: true });
+
+        document.addEventListener("touchend", (e) => {
+          if (!tracking) return;
+          if (e.changedTouches.length !== 1) {
+            tracking = false;
+            return;
+          }
+
+          tracking = false;
+
+          const touch = e.changedTouches[0];
+          const deltaX = touch.clientX - startX;
+          const deltaY = Math.abs(touch.clientY - startY);
+          const duration = Date.now() - startTime;
+
+          if (duration > MAX_DURATION) return;
+          if (deltaY > MAX_VERTICAL) return;
+          if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
+
+          const swipedRight = deltaX > 0;
+          const swipedLeft = deltaX < 0;
+
+          // SWIPE RIGHT → BUKA SIDEBAR
+          if (swipedRight) {
+            const sb = document.getElementById("sidebar");
+            if (sb && sb.classList.contains("collapsed")) {
+              if (startX <= EDGE_ZONE || startX < window.innerWidth / 2) {
+                const toggle = document.getElementById("sidebar-toggle");
+                if (toggle) toggle.click();
+              }
+            }
+            return;
+          }
+
+          // SWIPE LEFT → BUKA RIGHT RAIL
+          if (swipedLeft) {
+            const rr = document.getElementById("right-rail");
+            if (rr && rr.classList.contains("collapsed")) {
+              if (startX >= window.innerWidth - EDGE_ZONE || startX > window.innerWidth / 2) {
+                rr.classList.remove("collapsed");
+                document.body.classList.remove("right-rail-collapsed");
+                const overlay = document.getElementById("right-rail-overlay");
+                if (overlay && window.innerWidth <= 1024) {
+                  overlay.classList.add("visible");
+                }
+              }
+            }
+            return;
+          }
+        }, { passive: true });
+      })();
+
+      // ===== STEP 16D: ZOOM LAYOUT FIX =====
+      (function setupZoomFix() {
+        let lastDPR = window.devicePixelRatio;
+
+        function checkZoom() {
+          const currentDPR = window.devicePixelRatio;
+          const zoomRatio = currentDPR / lastDPR;
+
+          if (Math.abs(zoomRatio - 1) > 0.3) {
+            document.body.classList.add("zoomed");
+          } else {
+            document.body.classList.remove("zoomed");
+          }
+
+          lastDPR = currentDPR;
+        }
+
+        window.addEventListener("resize", checkZoom);
+        checkZoom();
+      })();
+
+      // ===== STEP 17: STATS =====
       (function computeStats() {
         const bubbles = document.querySelectorAll(".bubble");
         let totalChars = 0;
@@ -2301,10 +2556,9 @@
         const statDuration = document.getElementById("stat-duration");
 
         if (statChars) {
-          const c = totalChars.toLocaleString();
           statChars.textContent = totalChars >= 1000
             ? (totalChars / 1000).toFixed(1) + "K"
-            : c;
+            : totalChars.toLocaleString();
         }
         if (statTokens) {
           const t = Math.round(totalChars / 4);
@@ -2332,6 +2586,94 @@
             requestAnimationFrame(() => { chatContainer.scrollTop = parseInt(saved, 10); });
           }
         } catch (e) {}
+      })();
+
+      // ===== STEP 19: SCROLL FADE + DIM + SCALE =====
+      (function setupScrollFade() {
+        const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        const messages = document.querySelectorAll(".message-row");
+        if (messages.length === 0) return;
+
+        if (prefersReduced || !("IntersectionObserver" in window)) {
+          messages.forEach(msg => msg.classList.add("fade-active"));
+          return;
+        }
+
+        const viewportHeight = window.innerHeight;
+        messages.forEach((msg) => {
+          const rect = msg.getBoundingClientRect();
+          const isInViewport = rect.top < viewportHeight && rect.bottom > 0;
+
+          if (isInViewport) {
+            msg.style.transition = "none";
+            msg.classList.add("fade-active");
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                msg.style.transition = "";
+              });
+            });
+          }
+        });
+
+        const activeObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            const msg = entry.target;
+            if (entry.isIntersecting) {
+              msg.classList.remove("fade-dim-above", "fade-dim-below");
+              msg.classList.add("fade-active");
+            }
+          });
+        }, {
+          root: chatContainer,
+          rootMargin: "-10% 0px -10% 0px",
+          threshold: 0
+        });
+
+        const dimObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            const msg = entry.target;
+            if (!entry.isIntersecting) {
+              const rect = entry.boundingClientRect;
+              if (rect.bottom < 0) {
+                msg.classList.remove("fade-active", "fade-dim-below");
+                msg.classList.add("fade-dim-above");
+              } else if (rect.top > 0) {
+                msg.classList.remove("fade-active", "fade-dim-above");
+                msg.classList.add("fade-dim-below");
+              }
+            }
+          });
+        }, {
+          root: chatContainer,
+          rootMargin: "50px 0px 50px 0px",
+          threshold: 0
+        });
+
+        messages.forEach(msg => {
+          activeObserver.observe(msg);
+          dimObserver.observe(msg);
+        });
+
+        window.addEventListener("beforeunload", () => {
+          activeObserver.disconnect();
+          dimObserver.disconnect();
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "j" || e.key === "k" || e.key === "Home" || e.key === "End") {
+            setTimeout(() => {
+              messages.forEach(msg => {
+                const rect = msg.getBoundingClientRect();
+                const msgMid = rect.top + rect.height / 2;
+                if (msgMid > 0 && msgMid < chatContainer.clientHeight) {
+                  msg.classList.remove("fade-dim-above", "fade-dim-below");
+                  msg.classList.add("fade-active");
+                }
+              });
+            }, 300);
+          }
+        });
       })();
     });
 
