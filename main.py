@@ -26,6 +26,7 @@ PUBLIC_DIR = "public"
 HISTORY_SUBDIR = "history"
 BACKUP_DIR = "backups"
 AUTHOR = "@nexterade"
+MAX_BACKUPS_KEEP = 5
 
 
 # ============================================================
@@ -124,6 +125,60 @@ def _format_clock() -> str:
     return time.strftime("%H:%M", time.localtime())
 
 
+# === PR-32: BACKUP VERSIONING HELPERS ===
+
+def _generate_backup_name(slug: str = "bulk", ext: str = "json") -> str:
+    """
+    PR-32: Generate nama file backup dengan timestamp.
+    Format: backup_<slug>_YYYYMMDD_HHMMSS.json
+    """
+    ts = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+    return f"backup_{slug}_{ts}.{ext}"
+
+
+def _prune_old_backups(backup_dir: str, prefix: str = "backup_", max_keep: int = MAX_BACKUPS_KEEP):
+    """
+    PR-32: Hapus backup lama, simpen maksimal `max_keep` versi terbaru.
+
+    Kriteria:
+        - File di `backup_dir` yang match pattern: prefix + timestamp
+        - Sort by mtime asc
+        - Hapus yang paling lama kalo > max_keep
+    """
+    if not os.path.isdir(backup_dir):
+        return
+
+    try:
+        entries = os.listdir(backup_dir)
+    except OSError:
+        return
+
+    backups = []
+    for name in entries:
+        if not name.startswith(prefix):
+            continue
+        if not name.endswith(".json"):
+            continue
+        # Skip file yang gak punya timestamp (misal backup_bulk.json lama)
+        if not re.search(r"_\d{8}_\d{6}\.json$", name):
+            continue
+        full_path = os.path.join(backup_dir, name)
+        try:
+            mtime = os.path.getmtime(full_path)
+            backups.append((mtime, full_path))
+        except OSError:
+            continue
+
+    backups.sort(key=lambda x: x[0])
+
+    if len(backups) > max_keep:
+        for _, old_path in backups[: len(backups) - max_keep]:
+            try:
+                os.remove(old_path)
+            except OSError:
+                pass
+
+
 def _generate_convo_id(inserted_at, fallback_offset: int = 0) -> str:
     """Generate ID unik untuk convo."""
     if inserted_at is not None:
@@ -181,7 +236,6 @@ def _print_session_list(sessions, limit=None):
         ins = s.get("inserted_at")
         ins_str = _format_epoch(ins)
         title = s.get("title") or "Tanpa Judul"
-        # FIX: kasih quote biar jelas ini judul chat, bukan status
         print_numbered(idx, f'💬 "{title}"  ·  {ins_str}')
 
 
@@ -281,7 +335,6 @@ def _validate_chat_data(chat_data: dict, convo_label: str = "") -> tuple:
         warnings.append(f"{label}: {invalid_msgs} pesan dengan format tidak standar")
 
     if empty_content > 0:
-        # FIX: penjelasan kenapa ada pesan kosong
         warnings.append(
             f"{label}: {empty_content} pesan tanpa teks (kemungkinan cuma lampiran gambar)"
         )
@@ -318,7 +371,6 @@ def handle_live_deepseek_backup() -> bool:
     print_section("Live Backup DeepSeek", icon="rocket")
     print_info("Ketik '0' di prompt mana aja buat batal & balik ke menu")
 
-    # FIX: kasih overview alur sebelum mulai
     if get_theme().enabled:
         print()
         print(f"  {C.GRAY}Alur:{C.RESET}")
@@ -416,7 +468,6 @@ def _run_live_backup_flow(fetcher: DeepSeekLiveBackup) -> bool:
     print_bullet("c         → mode checklist interaktif")
     print()
 
-    # FIX: adaptive default — kalo cuma ≤10, default "all"
     default_sel = "all" if total_sessions <= 10 else "1"
     if default_sel == "all":
         print_info(f"Total: {total_sessions} obrolan — default 'all' (backup semua)")
@@ -487,17 +538,33 @@ def _run_live_backup_flow(fetcher: DeepSeekLiveBackup) -> bool:
         return False
 
     os.makedirs(BACKUP_DIR, exist_ok=True)
+
+    # === PR-32: Backup Versioning ===
     if len(convo_results) > 1:
-        bulk_name = os.path.join(BACKUP_DIR, "backup_bulk.json")
+        slug = "bulk"
     else:
         slug = re.sub(r"[^a-z0-9]+", "-", convo_results[0].get("title", "chat").lower()).strip("-")[:40] or "chat"
-        bulk_name = os.path.join(BACKUP_DIR, f"backup_{slug}.json")
+
+    backup_filename = _generate_backup_name(slug)
+    bulk_name = os.path.join(BACKUP_DIR, backup_filename)
 
     with open(bulk_name, "w", encoding="utf-8") as f:
         json.dump(convo_results, f, indent=2, ensure_ascii=False)
 
+    _prune_old_backups(BACKUP_DIR, prefix="backup_", max_keep=MAX_BACKUPS_KEEP)
+
     print_section("Hasil Backup", icon="check")
-    print_success(f"{len(convo_results)} obrolan tersimpan ke: {bulk_name}")
+    print_success(f"{len(convo_results)} obrolan tersimpan ke:")
+
+    t = get_theme()
+    if t.enabled:
+        print(f"      {C.ACCENT}backups/{backup_filename}{C.RESET}")
+    else:
+        print(f"      backups/{backup_filename}")
+
+    print()
+    print_info(f"Backup lama tetep tersimpan (maks {MAX_BACKUPS_KEEP} versi terakhir)")
+
     if skipped:
         print_warn(f"Skip: {len(skipped)} obrolan (gak ada update)")
     if failed:
@@ -510,7 +577,7 @@ def _run_live_backup_flow(fetcher: DeepSeekLiveBackup) -> bool:
         print_warn(f"📎 {pending_count} file lampiran perlu taruh manual")
         print_info("DeepSeek blokir download otomatis buat file.")
         print()
-        print_bullet(f"Buka: {C.WHITE}attachments/PENDING.md{C.RESET}" if get_theme().enabled else "Buka: attachments/PENDING.md")
+        print_bullet("Buka: attachments/PENDING.md")
         print_bullet("Ikutin langkah-langkahnya (~5 menit)")
         print_bullet("Re-render buat apply lampiran")
 
@@ -604,7 +671,6 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
         )
 
         for w in warnings:
-            # FIX: ganti icon warn jadi info buat pesan kosong
             if "tanpa teks" in w:
                 t = get_theme()
                 if t.enabled:
@@ -740,11 +806,11 @@ def handle_local_render() -> bool:
 
 
 # ============================================================
-# TUTORIAL & PANDUAN (Menu [3]) — UPGRADED
+# TUTORIAL & PANDUAN (Menu [3])
 # ============================================================
 
 def handle_tutorial():
-    """Tampilkan tutorial lengkap — versi upgrade user-friendly."""
+    """Tampilkan tutorial lengkap."""
     _clear_screen()
     t = get_theme()
 
@@ -790,9 +856,6 @@ def handle_tutorial():
         else:
             print(" " * indent + f"ℹ  {text}")
 
-    # ============================================================
-    # HEADER
-    # ============================================================
     _header("📖  TUTORIAL & PANDUAN — GhostWriter")
     print()
     _line("Selamat datang di GhostWriter! 👻")
@@ -802,11 +865,8 @@ def handle_tutorial():
         print(f"  {C.GRAY}💡 Baru pake? Baca {C.WHITE}QUICK START{C.RESET} {C.GRAY}di bawah.{C.RESET}")
         print(f"  {C.GRAY}💡 Udah jalan, cuma butuh fitur? Skip ke {C.WHITE}TIPS & TRIK{C.RESET}{C.GRAY}.{C.RESET}")
 
-    # ============================================================
-    # SECTION 1 — QUICK START (BARU)
-    # ============================================================
+    # --- SECTION 1: QUICK START ---
     _section("QUICK START", icon="⚡")
-
     print()
     _line("3 langkah — kurang dari 30 detik:")
     print()
@@ -834,11 +894,8 @@ def handle_tutorial():
     _hint("💡 serve.py bakal nanya \"buka browser sekarang?\" — ketik Y.")
     _info("Kalo error, lompat ke TROUBLESHOOTING di bawah.")
 
-    # ============================================================
-    # SECTION 2 — CARA BUKA DI BROWSER
-    # ============================================================
+    # --- SECTION 2: CARA BUKA DI BROWSER ---
     _section("CARA BUKA DI BROWSER", icon="🌐")
-
     print()
     _line("Kenapa butuh server?")
     _line("Viewer GhostWriter fetch index.json & asset lewat HTTP.", indent=4)
@@ -854,43 +911,30 @@ def handle_tutorial():
     print()
     _info("Ganti port: python3 serve.py --port 8080")
 
-    # ============================================================
-    # SECTION 3 — KEYBOARD SHORTCUTS
-    # ============================================================
+    # --- SECTION 3: KEYBOARD SHORTCUTS ---
     _section("KEYBOARD SHORTCUTS", icon="⌨️")
-
     print()
+    shortcuts = [
+        ("?", "Buka panel keyboard shortcuts"),
+        ("/", "Fokus ke search box"),
+        ("j / k", "Navigate pesan berikutnya / sebelumnya"),
+        ("Home", "Scroll ke paling atas"),
+        ("End", "Scroll ke paling bawah"),
+        ("Esc", "Tutup sidebar / right rail / modal"),
+    ]
     if t.enabled:
-        shortcuts = [
-            ("?", "Buka panel keyboard shortcuts"),
-            ("/", "Fokus ke search box"),
-            ("j / k", "Navigate pesan berikutnya / sebelumnya"),
-            ("Home", "Scroll ke paling atas"),
-            ("End", "Scroll ke paling bawah"),
-            ("Esc", "Tutup sidebar / right rail / modal"),
-        ]
         for key, desc in shortcuts:
             print(f"  {C.ACCENT}{key:<10}{C.RESET} {C.WHITE}{desc}{C.RESET}")
     else:
-        shortcuts = [
-            ("?", "Buka panel keyboard shortcuts"),
-            ("/", "Fokus ke search box"),
-            ("j / k", "Navigate pesan berikutnya / sebelumnya"),
-            ("Home", "Scroll ke paling atas"),
-            ("End", "Scroll ke paling bawah"),
-            ("Esc", "Tutup sidebar / right rail / modal"),
-        ]
         for key, desc in shortcuts:
             print(f"  {key:<10} {desc}")
     print()
     _info("Tekan ? di viewer buat liat semua shortcut")
 
-    # ============================================================
-    # SECTION 4 — TROUBLESHOOTING (DI-GROUP)
-    # ============================================================
+    # --- SECTION 4: TROUBLESHOOTING ---
     _section("TROUBLESHOOTING", icon="❓")
 
-    # --- Group 1: Error Umum ---
+    # Group 1
     print()
     if t.enabled:
         print(f"  {C.RED}🔴 Error Umum{C.RESET}")
@@ -912,7 +956,7 @@ def handle_tutorial():
     _line("A: GhostWriter auto-invalidate token cache.", indent=4)
     _line("   Login ulang pake token baru dari DevTools.", indent=4)
 
-    # --- Group 2: Fitur Gak Jalan ---
+    # Group 2
     print()
     if t.enabled:
         print(f"  {C.YELLOW}🟡 Fitur Gak Jalan{C.RESET}")
@@ -933,54 +977,27 @@ def handle_tutorial():
     _line("A: Cek Console (F12) — biasanya CORS atau JS error.", indent=4)
     _line("   Pastiin akses via http://localhost:8000/", indent=4)
 
-    # ============================================================
-    # SECTION 5 — TIPS & TRIK (BARU)
-    # ============================================================
+    # --- SECTION 5: TIPS & TRIK ---
     _section("TIPS & TRIK", icon="💡")
-
     print()
-    if t.enabled:
-        tips = [
-            ("Render 1 obrolan doang",
-             'python3 main.py backup.json --chat-index 0'),
-            ("Render semua obrolan di file",
-             'python3 main.py backup.json --all'),
-            ("Ganti port server",
-             'python3 serve.py --port 8080'),
-            ("Sync index tanpa render ulang",
-             'python3 sync.py'),
-            ("Debug mode (kalo ada error)",
-             'GW_DEBUG=1 python3 main.py'),
-            ("Ganti delay backup (anti-suspend)",
-             'GW_DELAY_MIN=2 GW_DELAY_MAX=4 python3 main.py'),
-        ]
-        for i, (desc, cmd) in enumerate(tips, 1):
+    tips = [
+        ("Render 1 obrolan doang", 'python3 main.py backup.json --chat-index 0'),
+        ("Render semua obrolan di file", 'python3 main.py backup.json --all'),
+        ("Ganti port server", 'python3 serve.py --port 8080'),
+        ("Sync index tanpa render ulang", 'python3 sync.py'),
+        ("Debug mode (kalo ada error)", 'GW_DEBUG=1 python3 main.py'),
+        ("Ganti delay backup (anti-suspend)", 'GW_DELAY_MIN=2 GW_DELAY_MAX=4 python3 main.py'),
+    ]
+    for i, (desc, cmd) in enumerate(tips, 1):
+        if t.enabled:
             print(f"  {C.ACCENT_DIM}{i}.{C.RESET} {C.WHITE}{desc}{C.RESET}")
             print(f"     {C.GREEN}{cmd}{C.RESET}")
-            print()
-    else:
-        tips = [
-            ("Render 1 obrolan doang",
-             'python3 main.py backup.json --chat-index 0'),
-            ("Render semua obrolan di file",
-             'python3 main.py backup.json --all'),
-            ("Ganti port server",
-             'python3 serve.py --port 8080'),
-            ("Sync index tanpa render ulang",
-             'python3 sync.py'),
-            ("Debug mode (kalo ada error)",
-             'GW_DEBUG=1 python3 main.py'),
-            ("Ganti delay backup (anti-suspend)",
-             'GW_DELAY_MIN=2 GW_DELAY_MAX=4 python3 main.py'),
-        ]
-        for i, (desc, cmd) in enumerate(tips, 1):
+        else:
             print(f"  {i}. {desc}")
             print(f"     {cmd}")
-            print()
+        print()
 
-    # ============================================================
-    # FOOTER
-    # ============================================================
+    # --- FOOTER ---
     print()
     if t.enabled:
         print(f"{C.ACCENT_DIM}{'─' * 58}{C.RESET}")
@@ -1002,21 +1019,11 @@ def handle_tutorial():
 
 
 # ============================================================
-# MENU UTAMA — User-Friendly (Nomor + Context)
+# MENU UTAMA
 # ============================================================
 
 def print_main_menu():
-    """
-    Menu utama GhostWriter — design Soft & Friendly.
-
-    Layout:
-        Header: emoji + title + garis horizontal
-        Items : [N] ▸ label — hint
-        Footer: context line (file, convo, jam)
-        Prompt: siap di bawah
-
-    FIX v2.4.0: Tambah nomor [N] di setiap item biar match sama input.
-    """
+    """Menu utama GhostWriter — Soft & Friendly design."""
     t = get_theme()
     ctx = _get_menu_context()
 
@@ -1040,7 +1047,6 @@ def print_main_menu():
         print(f"  {C.GRAY}[0]{C.RESET} {C.GRAY}{bullet}{C.RESET}  {C.GRAY}Keluar{C.RESET}")
         print()
 
-        # === FOOTER CONTEXT ===
         print(f"  {C.ACCENT_DIM}{sep * 55}{C.RESET}")
         ctx_parts = []
         if ctx["files_count"] > 0:
@@ -1110,11 +1116,11 @@ def _wait_enter():
 
 
 # ============================================================
-# FIX #3: WRAPPER — Try/Except per Handler
+# WRAPPER — Try/Except per Handler
 # ============================================================
 
 def _safe_run(handler_fn, handler_name: str, **kwargs) -> bool:
-    """FIX #3: Jalankan handler dengan try/except comprehensive."""
+    """Jalankan handler dengan try/except comprehensive."""
     try:
         result = handler_fn(**kwargs)
         return bool(result) if result is not None else True
@@ -1152,7 +1158,6 @@ def run_wizard():
 
     while True:
         print_main_menu()
-        # FIX: default = "0" (keluar) — safe default
         pilihan = _prompt("Pilih menu [0-3]", default="0")
 
         if pilihan == "__CANCEL__" or pilihan in ("0", "q", "quit", "exit", "keluar"):
