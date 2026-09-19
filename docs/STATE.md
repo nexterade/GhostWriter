@@ -2,7 +2,7 @@
                     GHOSTWRITER — PROJECT STATE & PROGRESS
 ================================================================================
 Project  : GhostWriter 👻📜 (AI Chat Dump to Web Interface Engine)
-Version  : v2.2.3-GW
+Version  : v2.3.0-GW
 Phase    : Phase 4 (Polish & Stabilization — IN PROGRESS)
 Updated  : 2026-09-19
 ================================================================================
@@ -24,40 +24,30 @@ production-ready:
       Local Storage untuk menarik seluruh riwayat chat + metadata dari
       akun DeepSeek pengguna.
 
+Update terbaru (2026-09-19 — v2.3.0):
+  ✓ UI Refactor besar-besaran — search bar pindah ke bottom, stats pindah
+    ke bawah header, header jadi slim + dropdown menu.
+  ✓ 5 bug mobile viewport fixed:
+    - Address bar nutupin konten (dvh + safe-area)
+    - Floating nav nutupin search (body.searching)
+    - Keyboard nutupin search box (search bar bottom)
+    - Header hilang pas keyboard (sticky + visualViewport)
+    - Stats hidden di mobile (pindah ke header)
+  ✓ Action A (Data Safety) selesai — PR-39, PR-40, PR-40A.
+  ✓ Action B (UX Quick Wins) selesai — PR-42, PR-43.
+  ✓ 3 file berubah: viewer.html, main.py, deepseek_backup.py.
+  ✓ Commit history bersih (commit 04a22a1).
+
+Update terbaru (2026-09-19 — v2.2.4):
+  ✓ Fix token expired handling graceful — AuthExpiredError.
+  ✓ `_request()` detect auth error (HTTP 401/403 + body code).
+  ✓ `main.py` wrap wizard handlers di `_safe_run()`.
+  ✓ Auto-invalidate token cache, balik ke menu (gak crash).
+
 Update terbaru (2026-09-19 — v2.2.3):
-  ✓ BACKLOG.md direstrukturisasi — semua PR pending dikelompokkan jadi
-    9 "Action Fixed" (A-I). Konsep: 1 Action = 1 Batch File = 1 Sesi.
-  ✓ 10 PR baru ditambahkan ke backlog:
-    - PR-39: Auto-Backup Sebelum Overwrite
-    - PR-40: Integrity Check Sebelum Render
-    - PR-41: Checksum / Manifest di Index.json
-    - PR-42: Keyboard Shortcut Overlay
-    - PR-43: Export Single Message
-    - PR-44: Onboarding Tour Pertama Kali
-    - PR-45: Lazy Load Attachment Images
-    - PR-46: Pagination di Landing Page
-    - PR-47: CLI Flag --stats
-    - PR-48: Auto-Detect Broken Links
-  ✓ Kategorisasi final:
-    Action A (Data Safety)        : PR-39, PR-40
-    Action B (UX Quick Wins)      : PR-42, PR-43
-    Action C (Index Safety Scale) : PR-41, PR-46, PR-48
-    Action D (Polish Backlog)     : PR-30, PR-32, PR-33
-    Action E (Perf & Onboarding)  : PR-44, PR-45
-    Action F (PDF Export)         : PR-36 (DEFERRED)
-    Action G (CLI Convenience)    : PR-47
-    Action H (Termux Integration) : PR-34
-    Action I (Advanced Features)  : PR-37, PR-38 (BACKLOG)
-
-Update terbaru (2026-09-19 — v2.2.2):
-  ✓ CHECKPOINT.md diupdate: split 3.10 (Format Full Code) & 3.11
-    (Alur Multi-Batch Confirmation).
-  ✓ Bentrok CHECKPOINT fixed (3.4, 3.7, versi bumped).
-  ✓ PR-31 (Skip Delay Attachment Pending) — implemented via circuit breaker.
-
-Update terbaru (2026-09-19 — v2.2.1):
-  ✓ Release v2.2-GW live di GitHub (nexterade/GhostWriter).
-  ✓ Aturan baru "Multi-Batch File Delivery" ditambahkan ke CHECKPOINT 3.11.
+  ✓ BACKLOG.md direstrukturisasi jadi Action Fixed (A-I).
+  ✓ 10 PR baru ditambahkan ke backlog.
+  ✓ Kategorisasi final: Action A-I.
 
 Update sebelumnya (2026-09-18 — Phase 3 COMPLETE):
   ✓ Multi-format parser: JSON (3 skema), Markdown, DOCX
@@ -81,7 +71,7 @@ GhostWriter/
 ├── .deepseek_token              [Auto] Token cache (chmod 600)
 ├── .gitignore                   Ignore public, backups, attachments, cache
 ├── main.py                      CLI Wizard (lokal & live fetcher)
-├── exporter.py                  HTML compiler + auto-index trigger
+├── exporter.py                  HTML compiler + auto-index trigger + auto-backup
 ├── serve.py                     Local HTTP server (auto-detect Termux)
 ├── sync.py                      Index regenerator (manual trigger)
 ├── requirements.txt             Dependencies
@@ -98,7 +88,8 @@ GhostWriter/
 │   ├── vendor/                  [Auto] Vendor assets (offline bundle)
 │   └── history/
 │       └── <convo_id>/          [Auto] Per-convo folder (pretty URL)
-│           └── index.html       Viewer individual
+│           ├── index.html       Viewer individual
+│           └── index-*.html.bak Backup otomatis (maks 3 versi)
 │
 ├── docs/                        Dokumentasi
 │   ├── BACKLOG.md
@@ -168,8 +159,13 @@ Fitur:
   ✓ Debug mode via GW_DEBUG=1
   ✓ Session tracking (skip kalo gak ada update)
   ✓ Incremental backup via state file (deepseek_backup_state.json)
-  ✓ PR-31: Circuit breaker untuk attachment pending — kalo udah 1x
-    kena HTML challenge, request berikutnya skip network + delay.
+  ✓ PR-31: Circuit breaker untuk attachment pending
+  ✓ PR-40A: Graceful token expired handling
+    - `AuthExpiredError` exception custom
+    - `_request()` detect auth error (HTTP 401/403 + body code 401/403)
+    - `_safe_json()` parse JSON dengan aman
+    - `_extract_biz_data()` handle response None / invalid
+    - `_detect_auth_error()` detect "token expired" / "invalid token"
 
 Anti-Suspend Strategy:
   ✓ Human-like delay + jitter (default 1-3s antar request)
@@ -224,14 +220,32 @@ Components:
   • print_bullet, print_numbered, print_kv, print_banner
 
 
-3.5 HTML Viewer (templates/viewer.html)
+3.5 HTML Viewer (templates/viewer.html) — v2.3.0 REFACTORED
 ────────────────────────────────────────────────────────────────────────────────
+
+Layout Baru (mirip DeepSeek/ChatGPT mobile):
+  ┌─────────────────────────────────────────┐
+  │  HEADER (slim)                          │
+  │  [☰] Title              [?] [🌙] [⋮]    │
+  ├─────────────────────────────────────────┤
+  │  STATS BAR (sticky)                     │
+  │  📊 N pesan · 📝 K char · 🎫 K token    │
+  ├─────────────────────────────────────────┤
+  │                                         │
+  │  CHAT CONTAINER (scrollable)            │
+  │                                         │
+  │  [▲▼ floating nav]                      │
+  ├─────────────────────────────────────────┤
+  │  SEARCH BAR (bottom, sticky)            │
+  │  [🔍 Cari...]            [N] [✕]        │
+  │  [▲ Prev] [▼ Next]                      │
+  └─────────────────────────────────────────┘
 
 Features:
   ✓ Markdown rendering (Marked.js)
   ✓ Syntax highlighting (highlight.js tokyo-night-dark)
   ✓ KaTeX math rendering (auto-render)
-  ✓ Search + next match highlight
+  ✓ Search + next match highlight (di bottom bar)
   ✓ Copy message (whole) + copy code block
   ✓ Collapsible long messages (>800 char)
   ✓ Dark/light theme toggle (persist via localStorage)
@@ -240,17 +254,25 @@ Features:
   ✓ Left sidebar: multi-convo (fetch index.json)
   ✓ Attachment card (with Base64 inline for images)
   ✓ Thinking block styling (details/summary dengan 🧠)
-  ✓ Stats footer (pesan, karakter, token est., durasi)
+  ✓ Stats bar (pesan, char, token est., durasi)
   ✓ Print stylesheet
-  ✓ Keyboard shortcuts: /, j, k, Home, End, Esc
-  ✓ Floating scroll nav
+  ✓ Keyboard shortcuts: /, ?, j, k, Home, End, Esc
+  ✓ Floating scroll nav (pindah ke atas search bar)
   ✓ Pretty URL: /history/<convo_id>/
+  ✓ Help modal (? shortcut) — PR-42
+  ✓ Message menu (⋯ dropdown) — PR-43
+    - Copy as Markdown
+    - Save as .md
+    - Copy Permalink
+  ✓ Header dropdown (⋮) — v2.3.0
+    - Print / Save as PDF
+    - Toggle Right Rail
 
-Catatan BUGFIX v2.2:
-  ✓ Fixed kurung kurawal JS salah posisi di loadDistIndex() — root cause
-    parse error cascade yang bikin SELURUH <script> gagal load.
-  ✓ Hapus duplikat fetch index.json (STEP 16) — gabung logika ke STEP 5.
-  ✓ Vendor path: ../../vendor/ (2-level up dari history/<id>/).
+Mobile Fixes (v2.3.0):
+  ✓ PR-42A: dvh + safe-area (address bar overlap)
+  ✓ PR-42B: body.searching hide floating nav
+  ✓ PR-42C: VisualViewport API (keyboard active)
+  ✓ PR-42D: Search bar bottom + stats header
 
 Responsive:
   ✓ Mobile: sidebar + right rail jadi drawer overlay
@@ -274,68 +296,43 @@ Features:
   ✓ Keyboard shortcut: / fokus search
   ✓ Responsive
 
-Metadata yang di-extract per HTML:
-  • Title dari <title> tag
-  • Message count dari class="message-row"
-  • Created at dari #header-subtitle
-  • First created dari .meta-time (pesan pertama)
-  • File size, mtime
 
-
-3.7 Local HTTP Server (serve.py) — NEW in v2.2
+3.7 Local HTTP Server (serve.py)
 ────────────────────────────────────────────────────────────────────────────────
 
-Fitur:
+Features:
   ✓ Serve folder public/ di http://localhost:8000/
   ✓ Auto-detect Termux (termux-open-url)
-  ✓ Auto-open browser (webbrowser.open fallback)
-  ✓ QuietHandler — filter log asset statis (.js/.css/.woff/.png/.ico/.svg)
-  ✓ No-cache headers (Cache-Control: no-store) biar fresh pas development
-  ✓ Port conflict handling (saran port+1 atau kill proses)
-  ✓ Argumen: --port/-p, --no-open
-
-Alasan:
-  • file:// protocol diblokir CORS buat fetch index.json + Clipboard API
-  • HTTP server = wajib sesuai CHECKPOINT 3.4
+  ✓ Auto-open browser
+  ✓ QuietHandler — filter log asset statis
+  ✓ No-cache headers
+  ✓ Port conflict handling
 
 
-3.8 Index Sync (sync.py) — NEW in v2.2
+3.8 Index Sync (sync.py)
 ────────────────────────────────────────────────────────────────────────────────
 
 Trigger manual untuk regenerate index.json + index.html.
-Berguna kalo user hapus/tambah folder convo manual tanpa render.
-
-Usage:
-  python3 sync.py
+Usage: python3 sync.py
 
 
-3.9 Action Fixed Framework (v2.2.3) — NEW
+3.9 Action Fixed Framework (v2.2.3)
 ────────────────────────────────────────────────────────────────────────────────
 
-Konsep:
-  Semua PR pending dikelompokkan jadi "Action Fixed" — 1 Action = 1 Batch
-  File = 1 Sesi Kerja. Tujuan: minim file bolak-balik, konsisten sama
-  CHECKPOINT 3.1 (Batch by File).
-
 9 Action Fixed:
-  Action A (Data Safety)        : PR-39, PR-40
-  Action B (UX Quick Wins)      : PR-42, PR-43
-  Action C (Index Safety Scale) : PR-41, PR-46, PR-48
-  Action D (Polish Backlog)     : PR-30, PR-32, PR-33
-  Action E (Perf & Onboarding)  : PR-44, PR-45
-  Action F (PDF Export)         : PR-36 (DEFERRED)
-  Action G (CLI Convenience)    : PR-47
-  Action H (Termux Integration) : PR-34
-  Action I (Advanced Features)  : PR-37, PR-38 (BACKLOG)
+  Action A (Data Safety)        : PR-39, PR-40, PR-40A ✅ DONE
+  Action B (UX Quick Wins)      : PR-42, PR-43 ✅ DONE
+  UI Refactor (Mobile)          : PR-42A, 42B, 42C, 42D ✅ DONE
+  Action C (Index Safety Scale) : PR-41, PR-46, PR-48 ⏳ Pending
+  Action D (Polish Backlog)     : PR-30, PR-32, PR-33 ⏳ NEXT
+  Action E (Perf & Onboarding)  : PR-44, PR-45 ⏳ Pending
+  Action F (PDF Export)         : PR-36 🕐 Deferred
+  Action G (CLI Convenience)    : PR-47 ⏳ Pending
+  Action H (Termux Integration) : PR-34 ⏳ Pending
+  Action I (Advanced Features)  : PR-37, PR-38 📋 Backlog
 
 Urutan prioritas (rekomendasi):
   A → B → D → C → E → F → G → H → I
-
-Estimasi waktu:
-  High priority (A-D)   : ~10-13 jam
-  Medium (E-H)          : ~7-11 jam
-  Low (I)               : ~10-14 jam
-  TOTAL                 : ~28-36 jam
 
 
 ================================================================================
@@ -346,7 +343,7 @@ Estimasi waktu:
       → Butuh session cookie browser.
       → Solusi: user taruh manual di ./attachments/
       → Manifest PENDING.md auto-generated
-      → Mitigasi PR-31: circuit breaker — kalo 1x gagal, skip sisanya.
+      → Mitigasi PR-31: circuit breaker.
 
   [2] file_id di history_messages kadang kosong
       → API strip metadata untuk security.
@@ -358,8 +355,6 @@ Estimasi waktu:
       → Solusi planned: PR-30 (Action D).
 
   [4] CDN fallback kalo vendor/ kosong
-      → vendor/ auto-copy dari root ke public/ via exporter.py
-      → BUGFIX v2.2: cek ISI folder, bukan eksistensi
       → Fallback ke CDN kalo vendor gak ada
 
   [5] Termux raw input gak works di on-screen keyboard
@@ -368,12 +363,10 @@ Estimasi waktu:
 
   [6] Backup output dedup
       → Setiap backup nulis backup_bulk.json (overwrite).
-      → Belum ada versioning per tanggal.
       → Solusi planned: PR-32 (Action D)
 
   [7] Stale folder di public/history/
       → Kalo source backup dihapus, folder di public/history/ tetep ada.
-      → Landing page masih nampilin convo "hantu".
       → Solusi planned: PR-33 (Action D)
 
   [8] Scale issue di landing page
@@ -400,10 +393,12 @@ Estimasi waktu:
   │ Phase 4  │ serve.py + sync.py                 │ ✅ Done      │
   │ Phase 4  │ BUGFIX #1-#6 (render & vendor)     │ ✅ Done      │
   │ Phase 4  │ PR-31 Circuit breaker attachment   │ ✅ Done      │
-  │ Phase 4  │ Action A (Data Safety)             │ ⏳ Next      │
-  │ Phase 4  │ Action B (UX Quick Wins)           │ ⏳ Next      │
+  │ Phase 4  │ PR-40A Token expired handling      │ ✅ Done      │
+  │ Phase 4  │ Action A (Data Safety)             │ ✅ Done      │
+  │ Phase 4  │ Action B (UX Quick Wins)           │ ✅ Done      │
+  │ Phase 4  │ UI Refactor Mobile (PR-42A-D)      │ ✅ Done      │
+  │ Phase 4  │ Action D (Polish Backlog)          │ ⏳ Next      │
   │ Phase 4  │ Action C (Index Safety & Scale)    │ ⏳ Pending   │
-  │ Phase 4  │ Action D (Polish Backlog)          │ ⏳ Pending   │
   │ Phase 5  │ Action E (Perf & Onboarding)       │ ⏳ Pending   │
   │ Phase 5  │ Action F (PDF Export)              │ 🕐 Deferred  │
   │ Phase 5  │ Action G (CLI Convenience)         │ ⏳ Pending   │
@@ -416,54 +411,36 @@ Estimasi waktu:
 6. NEXT STEPS
 ================================================================================
 
-Priority 1 — Action A: Data Safety (1.5 jam)
-  • PR-39: Auto-Backup Sebelum Overwrite
-  • PR-40: Integrity Check Sebelum Render
-  • Files: exporter.py, main.py
-
-Priority 2 — Action B: UX Quick Wins (2.5 jam)
-  • PR-42: Keyboard Shortcut Overlay
-  • PR-43: Export Single Message
-  • Files: templates/viewer.html
-
-Priority 3 — Action D: Polish Backlog Lama (2-3 jam)
+Priority 1 — Action D: Polish Backlog Lama (2-3 jam)
   • PR-30: Fix Dedup Edge Case
   • PR-32: Backup Versioning
   • PR-33: Prune Stale public/history/
   • Files: tools/dist_index.py, main.py, sync.py
 
-Priority 4 — Action C: Index Safety & Scale (4-5 jam)
+Priority 2 — Action C: Index Safety & Scale (4-5 jam)
   • PR-41: Checksum / Manifest di Index.json
   • PR-46: Pagination / Infinite Scroll
   • PR-48: Auto-Detect Broken Links
   • Files: tools/dist_index.py, sync.py
 
-Priority 5 — Action E: Perf & Onboarding (3 jam)
+Priority 3 — Action E: Perf & Onboarding (3 jam)
   • PR-44: Onboarding Tour Pertama Kali
   • PR-45: Lazy Load Attachment Images
   • Files: templates/viewer.html, tools/dist_index.py, parsers/json_parser.py
 
-Priority 6 — Action F: PDF Export (2-4 jam, DEFERRED)
+Priority 4 — Action F: PDF Export (2-4 jam, DEFERRED)
   • PR-36: Export Individual Convo to PDF
-  • Files: templates/viewer.html, main.py
+  • Note: Tombol PDF udah ada di dropdown ⋮ (via window.print())
 
-Priority 7 — Action G: CLI Convenience (30 menit)
+Priority 5 — Action G: CLI Convenience (30 menit)
   • PR-47: CLI Flag --stats
-  • Files: main.py
 
-Priority 8 — Action H: Termux Integration (1-2 jam)
+Priority 6 — Action H: Termux Integration (1-2 jam)
   • PR-34: Termux API Integration
-  • Files: tools/checklist.py, main.py
 
-Priority 9 — Action I: Advanced Features (10-14 jam, BACKLOG)
+Priority 7 — Action I: Advanced Features (10-14 jam, BACKLOG)
   • PR-37: Category/Tag untuk Convo
   • PR-38: Diff View
-  • Butuh design dulu sebelum eksekusi
-
-Dokumentasi:
-  • Update STATE.md kalo ada perubahan
-  • Update BACKLOG.md saat milestone baru
-  • Update CHECKPOINT.md kalo ada aturan baru
 
 
 ================================================================================
@@ -516,12 +493,11 @@ Catatan:
 7.3 Account Suspension Lessons Learned
 ────────────────────────────────────────────────────────────────────────────────
 
-Trigger hypothesis (2026-09-18):
-  • Repeated prompt upload (save state files) → flag "cross-platform copying"
-  • Pattern request berubah drastis (script vs human) → risk control trigger
-  • Timing: pas abis mulai nge-API DeepSeek intensif
+Trigger hypothesis:
+  • Repeated prompt upload → flag "cross-platform copying"
+  • Pattern request berubah drastis → risk control trigger
 
-Mitigation implemented:
+Mitigation:
   • Human-like delay + jitter (1-3s antar request)
   • Session delay (3-7s antar sesi)
   • Retry delay (5-10s setelah error)
@@ -533,23 +509,14 @@ Mitigation implemented:
 
 Fenomena:
   Kurung kurawal `}` yang salah posisi di viewer.html (loadDistIndex)
-  bikin SELURUH <script> gagal parse. Efeknya:
-    • Markdown gak render
-    • Sidebar kosong
-    • Search gak jalan
-    • Theme toggle gak ngefek
-    • SEMUA fitur JS mati
+  bikin SELURUH <script> gagal parse.
 
 Root cause:
-  section.appendChild(el) dipanggil DI LUAR callback addEventListener,
-  padahal harusnya DI DALAM. Akibatnya parser JS nemu `}` yang gak match,
-  stop parsing, dan semua kode setelahnya gak jalan.
+  section.appendChild(el) dipanggil DI LUAR callback addEventListener.
 
 Lesson:
-  • Browser JS parser (V8, SpiderMonkey) forgiving — error muncul di baris
-    yang gak berhubungan.
+  • Browser JS parser forgiving — error muncul di baris yang gak berhubungan.
   • Selalu cek Console (F12) buat Uncaught SyntaxError.
-  • Auto-close bracket di editor = penyelamat.
 
 
 7.5 Circuit Breaker Pattern (v2.2.2)
@@ -557,24 +524,39 @@ Lesson:
 
 Konteks:
   Kalo backup convo dengan banyak attachment, tiap attachment butuh delay
-  1-3s sebelum request. Tapi kalo endpoint /file/download balikin HTML
-  challenge (yang selalu kejadian via Bearer token), SEMUA request bakal
-  gagal — dan delay-nya tetep jalan.
+  1-3s. Tapi kalo endpoint /file/download balikin HTML challenge, SEMUA
+  request bakal gagal — dan delay-nya tetep jalan.
 
 Solusi (PR-31):
   Circuit breaker — kalo 1x kena HTML challenge, set flag
-  _attachment_download_disabled = True. Semua request berikutnya skip
-  network + delay sepenuhnya.
+  _attachment_download_disabled = True.
 
 Efek:
   Sebelum: 50 attachment × delay 1-3s = 50-150 detik buang-buang.
-  Setelah: 1x delay (attachment #1), sisanya instant pending.
-  Saving: ~97% waktu backup kalo banyak attachment pending.
+  Setelah: 1x delay, sisanya instant pending.
+  Saving: ~97%.
 
-Referensi:
-  Pattern ini dari Michael Nygard, buku "Release It!" (2007).
+
+7.6 Mobile Viewport Fragmentation (v2.3.0)
+────────────────────────────────────────────────────────────────────────────────
+
+Fenomena:
+  Keyboard mobile + address bar + safe-area bikin layout viewer rusak.
+  Setiap OEM Android (Xiaomi, Samsung, Oppo) modif WebView beda.
+
+Solusi (PR-42A/B/C/D):
+  • CSS: 100dvh + env(safe-area-inset-bottom)
+  • CSS: body.searching hide floating nav
+  • JS: window.visualViewport API
+  • UI: Search bar pindah ke bottom (mirip DeepSeek/ChatGPT)
+
+Efek:
+  • Search box gak ketutup keyboard lagi.
+  • Header gak ke-push keluar.
+  • Stats selalu visible.
+  • Viewer align sama pattern 2024.
 
 
 ================================================================================
-                     END OF STATE — GHOSTWRITER v2.2.3-GW
+                     END OF STATE — GHOSTWRITER v2.3.0-GW
 ================================================================================
