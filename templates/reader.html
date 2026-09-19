@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>{{ TITLE }}</title>
+  {{ FAVICON_LINK }}
+
+  <style>
+    :root {
+      --bg-primary: #0b0f19;
+      --bg-secondary: #0f172a;
+      --bg-surface: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #1e293b;
+      --border-subtle: #334155;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --purple: #a78bfa;
+      --purple-glow: rgba(167, 139, 250, 0.15);
+      --green: #4ade80;
+      --yellow: #facc15;
+      --red: #f87171;
+      --sidebar-width: 260px;
+      --right-rail-width: 180px;
+      --reader-max-width: 900px;
+    }
+
+    html[data-theme="light"] {
+      --bg-primary: #f8fafc;
+      --bg-secondary: #ffffff;
+      --bg-surface: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --border-subtle: #cbd5e1;
+      --accent: #0284c7;
+      --accent-glow: rgba(2, 132, 199, 0.12);
+      --purple: #7c3aed;
+      --purple-glow: rgba(124, 58, 237, 0.12);
+      --green: #16a34a;
+      --yellow: #ca8a04;
+      --red: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      touch-action: manipulation;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    .gw-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.4s ease-out;
+      pointer-events: auto;
+    }
+
+    .gw-loader.hidden { opacity: 0; pointer-events: none; }
+    .gw-loader.fade-complete { display: none; }
+
+    .gw-loader-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      text-align: center;
+      padding: 32px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .gw-loader-logo {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: gw-logo-pulse 2s ease-in-out infinite;
+    }
+
+    .gw-loader-logo svg {
+      width: 64px !important;
+      height: 64px !important;
+      fill: var(--accent) !important;
+      filter: drop-shadow(0 0 16px var(--accent-glow));
+    }
+
+    @keyframes gw-logo-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.95); opacity: 0.85; }
+    }
+
+    .gw-loader-wordmark {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      line-height: 1;
+    }
+
+    .gw-loader-progress {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .gw-loader-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-surface);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gw-loader-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent) 60%, var(--purple) 100%);
+      border-radius: 9999px;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gw-loader-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+      animation: gw-shimmer 1.5s ease-in-out infinite;
+    }
+
+    @keyframes gw-shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .gw-loader-percent {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 44px;
+      text-align: right;
+      letter-spacing: 0.02em;
+    }
+
+    .gw-loader-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+      min-height: 1.2em;
+      transition: color 0.2s ease;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .gw-loader-logo { animation: none; }
+      .gw-loader-fill::after { animation: none; }
+      .gw-loader-fill { transition: none; }
+    }
+
+    .sidebar-overlay,
+    .right-rail-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .sidebar-overlay { z-index: 99; }
+    .right-rail-overlay { z-index: 100; }
+    .sidebar-overlay.visible,
+    .right-rail-overlay.visible { display: block; opacity: 1; }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: margin-left 0.3s ease;
+      overflow: hidden;
+      z-index: 100;
+    }
+
+    .sidebar.collapsed { margin-left: calc(var(--sidebar-width) * -1); }
+
+    .sidebar-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      gap: 8px;
+    }
+
+    .gw-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--text-main);
+      user-select: none;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .gw-logo-svg { flex-shrink: 0; display: block; width: 22px !important; height: 22px !important; }
+
+    .gw-wordmark {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: var(--text-main);
+      line-height: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-body { flex: 1; overflow-y: auto; padding: 12px 8px; }
+
+    .sidebar-meta {
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      background: var(--bg-surface);
+      border-radius: 8px;
+      border-left: 2px solid var(--accent);
+    }
+
+    .sidebar-meta-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .sidebar-meta-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    .sidebar-section-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 10px 10px 6px;
+      user-select: none;
+    }
+
+    .page-jump-input {
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      outline: none;
+      font-family: inherit;
+      margin: 0 4px;
+    }
+
+    .page-jump-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    .sidebar-footer {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-shrink: 0;
+      background: var(--bg-secondary);
+    }
+
+    .sidebar-footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .sidebar-icon-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .sidebar-icon-btn:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-subtle);
+      color: var(--accent);
+    }
+
+    #sidebar-close-btn:hover { border-color: var(--red); color: var(--red); }
+
+    .right-rail {
+      width: var(--right-rail-width);
+      background-color: var(--bg-secondary);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      transition: margin-right 0.3s ease;
+      overflow: hidden;
+      z-index: 101;
+    }
+
+    .right-rail.collapsed { margin-right: calc(var(--right-rail-width) * -1); }
+
+    .right-rail-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .right-rail-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .right-rail-list { flex: 1; overflow-y: auto; padding: 8px; }
+
+    .page-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      border-left: 2px solid transparent;
+      transition: all 0.15s ease;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    .page-nav-item:hover {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border-left-color: var(--accent);
+    }
+
+    .page-nav-item.active {
+      background: var(--accent-glow);
+      color: var(--text-main);
+      border-left-color: var(--accent);
+    }
+
+    .page-nav-index {
+      font-family: ui-monospace, monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      flex-shrink: 0;
+      min-width: 28px;
+      font-weight: 600;
+    }
+
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      height: 100vh;
+      height: 100dvh;
+      position: relative;
+    }
+
+    header {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      backdrop-filter: blur(8px);
+      flex-shrink: 0;
+      z-index: 20;
+    }
+
+    .header-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sidebar-toggle {
+      display: none;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+      font-family: inherit;
+    }
+
+    .sidebar-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+    .type-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+
+    .type-badge.ebook {
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .type-badge.comic {
+      background: var(--purple-glow);
+      color: var(--purple);
+      border: 1px solid var(--purple);
+    }
+
+    .header-title-group { display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+
+    .header-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-subtitle {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-tools { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    .header-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 6px 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      font-family: inherit;
+    }
+
+    .header-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .header-btn.active { border-color: var(--accent); color: var(--accent); }
+
+    .stats-bar {
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 19;
+    }
+
+    .stats-bar span strong { color: var(--text-main); font-weight: 600; }
+    .stats-bar span .stat-icon { margin-right: 3px; }
+
+    /* === READER CONTAINER (FIX: padding lebih kecil) === */
+    .reader-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      min-height: 0;
+      overscroll-behavior: contain;
+      scroll-padding-top: 80px;
+      scroll-behavior: smooth;
+    }
+
+    /* === READER PAGE (FIX: no crop, no bg, line-height 0) === */
+    .reader-page {
+      width: 100%;
+      max-width: var(--reader-max-width);
+      border-radius: 6px;
+      overflow: visible;
+      background: transparent;
+      border: none;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: opacity, transform;
+      scroll-margin-top: 80px;
+      position: relative;
+      line-height: 0;
+    }
+
+    .reader-page.fade-active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reader-page.fade-dim-above {
+      opacity: 0.35;
+      transform: translateY(-8px);
+      transition-duration: 0.4s;
+    }
+
+    .reader-page.fade-dim-below {
+      opacity: 0.5;
+      transform: translateY(8px);
+      transition-duration: 0.4s;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reader-page,
+      .reader-page.fade-active,
+      .reader-page.fade-dim-above,
+      .reader-page.fade-dim-below {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+    }
+
+    /* === READER IMG (FIX: no min-height, no bg, max-width) === */
+    .reader-page img {
+      width: 100%;
+      height: auto;
+      display: block;
+      max-width: 100%;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .reader-page .page-number-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-family: ui-monospace, monospace;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 2;
+      line-height: 1;
+    }
+
+    .reader-page:hover .page-number-badge { opacity: 1; }
+
+    .reader-page-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      gap: 10px;
+      line-height: 1.4;
+    }
+
+    .reader-page-loading::before {
+      content: "";
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-subtle);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .floating-nav {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 15;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.2s ease;
+    }
+
+    .floating-nav.visible { opacity: 1; pointer-events: auto; }
+
+    .floating-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .floating-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+    .floating-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    .help-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .help-modal-overlay.visible { display: flex; opacity: 1; }
+
+    .help-modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      max-width: 480px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      transform: scale(0.95);
+      transition: transform 0.25s ease;
+    }
+
+    .help-modal-overlay.visible .help-modal { transform: scale(1); }
+
+    .help-modal-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+      z-index: 1;
+    }
+
+    .help-modal-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-modal-close {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .help-modal-close:hover { border-color: var(--red); color: var(--red); }
+
+    .help-modal-body { padding: 18px 22px; }
+    .help-section { margin-bottom: 22px; }
+    .help-section:last-child { margin-bottom: 0; }
+
+    .help-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+    }
+
+    .help-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+
+    .help-row:last-child { border-bottom: none; }
+    .help-label { color: var(--text-main); }
+    .help-keys { display: flex; gap: 4px; flex-shrink: 0; }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.72rem;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .kbd.accent {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .gw-toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      z-index: 300;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+
+    .gw-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .gw-toast.success { border-color: var(--green); }
+    .gw-toast.error { border-color: var(--red); }
+
+    /* === FULLSCREEN MODE (FIX: 100vw) === */
+    body.fullscreen .sidebar,
+    body.fullscreen .right-rail,
+    body.fullscreen header,
+    body.fullscreen .stats-bar {
+      display: none !important;
+    }
+
+    body.fullscreen .reader-container {
+      padding: 0;
+      gap: 0;
+      background: #000;
+    }
+
+    body.fullscreen .reader-page {
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+      max-width: 100vw;
+      width: 100vw;
+      margin: 0;
+    }
+
+    body.fullscreen .reader-page img {
+      width: 100vw;
+      max-width: 100vw;
+      height: auto;
+      display: block;
+      border-radius: 0;
+    }
+
+    @media (max-width: 1024px) {
+      .right-rail {
+        position: fixed;
+        right: 0;
+        top: 0;
+        height: 100vh;
+        height: 100dvh;
+        z-index: 101;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+        transform: translateX(0);
+        transition: transform 0.3s ease;
+        margin-right: 0;
+      }
+
+      .right-rail.collapsed { transform: translateX(100%); margin-right: 0; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: fixed;
+        z-index: 100;
+        height: 100vh;
+        height: 100dvh;
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .sidebar-toggle { display: inline-block; }
+      .header-subtitle { display: none; }
+      .stats-bar { font-size: 0.65rem; gap: 10px; padding: 6px 12px; }
+
+      .reader-container { padding: 8px 4px; gap: 8px; }
+      .floating-nav { right: 12px; bottom: 16px; }
+      .floating-btn { width: 38px; height: 38px; font-size: 0.9rem; }
+      .right-rail { width: 200px; height: 100vh; height: 100dvh; }
+    }
+
+    @media (max-width: 500px) {
+      .stats-bar span:not(:first-child) { display: none; }
+      .reader-page { border-radius: 4px; }
+    }
+
+    @supports (height: 100dvh) {
+      body, .main-area { height: 100dvh; }
+      .sidebar, .right-rail { height: 100dvh; }
+    }
+
+    .reader-container::-webkit-scrollbar,
+    .sidebar-body::-webkit-scrollbar,
+    .right-rail-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .reader-container::-webkit-scrollbar-track,
+    .sidebar-body::-webkit-scrollbar-track,
+    .right-rail-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .reader-container::-webkit-scrollbar-thumb,
+    .sidebar-body::-webkit-scrollbar-thumb,
+    .right-rail-list::-webkit-scrollbar-thumb {
+      background: var(--border-subtle);
+      border-radius: 9999px;
+    }
+
+    .reader-container::-webkit-scrollbar-thumb:hover,
+    .sidebar-body::-webkit-scrollbar-thumb:hover,
+    .right-rail-list::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="gw-loader" id="gw-loader">
+    <div class="gw-loader-inner">
+      <div class="gw-loader-logo">{{ LOGO_SVG }}</div>
+      <div class="gw-loader-wordmark">GhostWriter</div>
+
+      <div class="gw-loader-progress">
+        <div class="gw-loader-bar">
+          <div class="gw-loader-fill" id="gw-loader-fill"></div>
+        </div>
+        <div class="gw-loader-percent" id="gw-loader-percent">0%</div>
+      </div>
+
+      <div class="gw-loader-text" id="gw-loader-text">Memuat halaman...</div>
+    </div>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+  <div class="right-rail-overlay" id="right-rail-overlay"></div>
+
+  <div class="help-modal-overlay" id="help-modal-overlay">
+    <div class="help-modal" role="dialog" aria-modal="true" aria-label="Keyboard Shortcuts">
+      <div class="help-modal-header">
+        <div class="help-modal-title">⌨️ Keyboard Shortcuts</div>
+        <button class="help-modal-close" id="help-modal-close" title="Tutup (Esc)">✕</button>
+      </div>
+      <div class="help-modal-body">
+
+        <div class="help-section">
+          <div class="help-section-title">🌐 Navigasi Global</div>
+          <div class="help-row">
+            <span class="help-label">Buka panel bantuan ini</span>
+            <span class="help-keys"><span class="kbd accent">?</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Tutup modal / panel</span>
+            <span class="help-keys"><span class="kbd">Esc</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Toggle fullscreen</span>
+            <span class="help-keys"><span class="kbd accent">f</span></span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-section-title">📖 Navigasi Halaman</div>
+          <div class="help-row">
+            <span class="help-label">Halaman berikutnya</span>
+            <span class="help-keys"><span class="kbd">j</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Halaman sebelumnya</span>
+            <span class="help-keys"><span class="kbd">k</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Ke halaman paling atas</span>
+            <span class="help-keys"><span class="kbd">Home</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Ke halaman paling bawah</span>
+            <span class="help-keys"><span class="kbd">End</span></span>
+          </div>
+        </div>
+
+        <div class="help-section">
+          <div class="help-section-title">📱 Mobile Gesture</div>
+          <div class="help-row">
+            <span class="help-label">Buka sidebar (kiri)</span>
+            <span class="help-keys"><span class="kbd">Swipe →</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Tutup sidebar (kiri)</span>
+            <span class="help-keys"><span class="kbd">Swipe ←</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Buka navigasi halaman (kanan)</span>
+            <span class="help-keys"><span class="kbd">Swipe ←</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Tutup navigasi halaman (kanan)</span>
+            <span class="help-keys"><span class="kbd">Swipe →</span></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <aside class="sidebar collapsed" id="sidebar">
+    <div class="sidebar-header">
+      <a class="gw-brand" href="../../index.html" title="Kembali ke arsip">
+        {{ LOGO_SVG }}
+        <span class="gw-wordmark">GhostWriter</span>
+      </a>
+    </div>
+    <div class="sidebar-body">
+      <div class="sidebar-meta">
+        <div class="sidebar-meta-title">{{ TITLE }}</div>
+        <div class="sidebar-meta-sub">{{ SUBTITLE }}</div>
+      </div>
+
+      <div class="sidebar-section-label">Lompat ke Halaman</div>
+      <input
+        type="number"
+        class="page-jump-input"
+        id="page-jump-input"
+        placeholder="Masukkan nomor halaman..."
+        min="1"
+        max="{{ TOTAL_PAGES }}"
+      >
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-brand">
+        <span>👻</span>
+        <span>v2.6.9-GW</span>
+      </div>
+      <button class="sidebar-icon-btn" id="sidebar-close-btn" title="Tutup sidebar (Esc)">✕</button>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <header id="main-header">
+      <div class="header-info">
+        <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">☰</button>
+        <span class="type-badge {{ TYPE_CLASS }}">{{ TYPE_LABEL }}</span>
+        <div class="header-title-group">
+          <div class="header-title">{{ TITLE }}</div>
+          <div class="header-subtitle">{{ SUBTITLE }}</div>
+        </div>
+      </div>
+
+      <div class="header-tools">
+        <button class="header-btn" id="help-toggle" title="Keyboard shortcuts ( ? )">?</button>
+        <button class="header-btn" id="fullscreen-toggle" title="Fullscreen ( f )">⛶</button>
+        <button class="header-btn" id="theme-toggle" title="Toggle tema">🌙</button>
+        <button class="header-btn" id="right-rail-toggle" title="Toggle navigasi halaman">📑</button>
+      </div>
+    </header>
+
+    <div class="stats-bar" id="stats-bar">
+      <span><span class="stat-icon">📄</span><strong id="stat-pages">{{ TOTAL_PAGES }}</strong> halaman</span>
+      <span><span class="stat-icon">📍</span>Halaman <strong id="stat-current">1</strong></span>
+      <span><span class="stat-icon">📚</span><strong>{{ TYPE_LABEL }}</strong></span>
+    </div>
+
+    <main class="reader-container" id="reader-container"></main>
+
+    <div class="floating-nav" id="floating-nav">
+      <button class="floating-btn" id="page-prev" title="Halaman sebelumnya (k)">▲</button>
+      <button class="floating-btn" id="page-next" title="Halaman berikutnya (j)">▼</button>
+      <button class="floating-btn" id="scroll-top" title="Ke atas (Home)">⤒</button>
+      <button class="floating-btn" id="scroll-bottom" title="Ke bawah (End)">⤓</button>
+    </div>
+  </div>
+
+  <aside class="right-rail collapsed" id="right-rail">
+    <div class="right-rail-header">
+      <span class="right-rail-title">📑 Halaman</span>
+      <button class="header-btn" id="right-rail-close" title="Tutup" style="padding: 3px 7px; font-size: 0.75rem;">✕</button>
+    </div>
+    <div class="right-rail-list" id="right-rail-list"></div>
+  </aside>
+
+  <div class="gw-toast" id="gw-toast"></div>
+
+  <script>
+    const READER_DATA = {{ READER_JSON }};
+  </script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const STORAGE_KEY_THEME = "gw-theme";
+      const STORAGE_KEY_SCROLL = "gw-scroll-reader-" + (READER_DATA.title || "").trim();
+      const STORAGE_KEY_LAST_PAGE = "gw-last-page-" + (READER_DATA.title || "").trim();
+
+      const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
+      if (savedTheme === "light") {
+        document.documentElement.setAttribute("data-theme", "light");
+        const tt = document.getElementById("theme-toggle");
+        if (tt) tt.textContent = "☀️";
+      }
+
+      const readerContainer = document.getElementById("reader-container");
+      const statsCurrentPage = document.getElementById("stat-current");
+
+      function buildPageDOM(section) {
+        try {
+          const pageEl = document.createElement("div");
+          pageEl.className = "reader-page";
+          pageEl.setAttribute("data-page", section.page);
+          pageEl.id = "page-" + section.page;
+
+          if (section.type === "image" && section.src) {
+            pageEl.innerHTML = `
+              <div class="page-number-badge">#${section.page}</div>
+              <img src="${section.src}" alt="Halaman ${section.page}" loading="lazy" decoding="async" style="width:100%;height:auto;display:block;max-width:100%;">
+            `;
+          } else if (section.type === "text" && section.content) {
+            const safeContent = String(section.content)
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;");
+            pageEl.innerHTML = `
+              <div class="page-number-badge">#${section.page}</div>
+              <div style="padding:24px;line-height:1.7;font-size:0.95rem;">${safeContent}</div>
+            `;
+          } else {
+            pageEl.innerHTML = `
+              <div class="page-number-badge">#${section.page}</div>
+              <div class="reader-page-loading">Halaman kosong</div>
+            `;
+          }
+
+          return pageEl;
+        } catch (err) {
+          console.error("buildPageDOM error:", err, section);
+          const fallback = document.createElement("div");
+          fallback.className = "reader-page";
+          fallback.innerHTML = `<div class="reader-page-loading">⚠️ Gagal render halaman ${section.page || "?"}</div>`;
+          return fallback;
+        }
+      }
+
+      const sections = READER_DATA.sections || [];
+      if (sections.length === 0) {
+        const empty = document.createElement("div");
+        empty.style.textAlign = "center";
+        empty.style.padding = "60px 20px";
+        empty.style.color = "var(--text-muted)";
+        empty.innerHTML = "<div style='font-size:3rem;margin-bottom:14px;opacity:0.5;'>📭</div><div>Belum ada halaman untuk ditampilkan.</div>";
+        readerContainer.appendChild(empty);
+      } else {
+        const fragment = document.createDocumentFragment();
+        sections.forEach(sec => fragment.appendChild(buildPageDOM(sec)));
+        readerContainer.appendChild(fragment);
+      }
+
+      const allPages = Array.from(document.querySelectorAll(".reader-page"));
+
+      (function setupScrollFade() {
+        if (allPages.length === 0) return;
+        const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        if (prefersReduced || !("IntersectionObserver" in window)) {
+          allPages.forEach(p => p.classList.add("fade-active"));
+          return;
+        }
+
+        const activeObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            const page = entry.target;
+            if (entry.isIntersecting) {
+              page.classList.remove("fade-dim-above", "fade-dim-below");
+              page.classList.add("fade-active");
+            }
+          });
+        }, {
+          root: readerContainer,
+          rootMargin: "-10% 0px -10% 0px",
+          threshold: 0
+        });
+
+        const dimObserver = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            const page = entry.target;
+            if (!entry.isIntersecting) {
+              const rect = entry.boundingClientRect;
+              if (rect.bottom < 0) {
+                page.classList.remove("fade-active", "fade-dim-below");
+                page.classList.add("fade-dim-above");
+              } else if (rect.top > 0) {
+                page.classList.remove("fade-active", "fade-dim-above");
+                page.classList.add("fade-dim-below");
+              }
+            }
+          });
+        }, {
+          root: readerContainer,
+          rootMargin: "50px 0px 50px 0px",
+          threshold: 0
+        });
+
+        allPages.forEach(p => {
+          activeObserver.observe(p);
+          dimObserver.observe(p);
+        });
+
+        window.addEventListener("beforeunload", () => {
+          activeObserver.disconnect();
+          dimObserver.disconnect();
+        });
+      })();
+
+      const sidebar = document.getElementById("sidebar");
+      const sidebarOverlay = document.getElementById("sidebar-overlay");
+      const sidebarToggle = document.getElementById("sidebar-toggle");
+      const sidebarCloseBtn = document.getElementById("sidebar-close-btn");
+      const pageJumpInput = document.getElementById("page-jump-input");
+
+      function openSidebar() {
+        sidebar.classList.remove("collapsed");
+        if (window.innerWidth <= 768) sidebarOverlay.classList.add("visible");
+        const rr = document.getElementById("right-rail");
+        if (rr && !rr.classList.contains("collapsed")) {
+          rr.classList.add("collapsed");
+          const rrOverlay = document.getElementById("right-rail-overlay");
+          if (rrOverlay) rrOverlay.classList.remove("visible");
+        }
+      }
+
+      function closeSidebar() {
+        sidebar.classList.add("collapsed");
+        sidebarOverlay.classList.remove("visible");
+      }
+
+      sidebarToggle?.addEventListener("click", () => {
+        if (sidebar.classList.contains("collapsed")) openSidebar();
+        else closeSidebar();
+      });
+      sidebarOverlay?.addEventListener("click", closeSidebar);
+      sidebarCloseBtn?.addEventListener("click", closeSidebar);
+
+      const rightRail = document.getElementById("right-rail");
+      const rightRailList = document.getElementById("right-rail-list");
+      const rightRailClose = document.getElementById("right-rail-close");
+      const rightRailOverlay = document.getElementById("right-rail-overlay");
+      const rightRailToggle = document.getElementById("right-rail-toggle");
+
+      function buildPageNav() {
+        if (allPages.length === 0) {
+          rightRailList.innerHTML = '<div style="padding: 12px; color: var(--text-muted); font-size: 0.78rem; text-align: center;">Belum ada halaman.</div>';
+          return;
+        }
+        rightRailList.innerHTML = "";
+        allPages.forEach(page => {
+          const pageNum = page.getAttribute("data-page");
+          const item = document.createElement("div");
+          item.className = "page-nav-item";
+          item.setAttribute("data-target-page", pageNum);
+          item.innerHTML = `
+            <span class="page-nav-index">${String(pageNum).padStart(3, "0")}</span>
+            <span>Halaman ${pageNum}</span>
+          `;
+          item.addEventListener("click", () => {
+            page.scrollIntoView({ behavior: "smooth", block: "start" });
+            document.querySelectorAll(".page-nav-item").forEach(el => el.classList.remove("active"));
+            item.classList.add("active");
+            if (window.innerWidth <= 1024) closeRightRail();
+          });
+          rightRailList.appendChild(item);
+        });
+      }
+
+      function openRightRail() {
+        rightRail.classList.remove("collapsed");
+        if (window.innerWidth <= 1024) rightRailOverlay?.classList.add("visible");
+        const sb = document.getElementById("sidebar");
+        if (sb && !sb.classList.contains("collapsed")) {
+          sb.classList.add("collapsed");
+          const sbOverlay = document.getElementById("sidebar-overlay");
+          if (sbOverlay) sbOverlay.classList.remove("visible");
+        }
+      }
+
+      function closeRightRail() {
+        rightRail.classList.add("collapsed");
+        rightRailOverlay?.classList.remove("visible");
+      }
+
+      function toggleRightRail() {
+        if (rightRail.classList.contains("collapsed")) openRightRail();
+        else closeRightRail();
+      }
+
+      rightRailClose?.addEventListener("click", closeRightRail);
+      rightRailOverlay?.addEventListener("click", closeRightRail);
+      rightRailToggle?.addEventListener("click", toggleRightRail);
+
+      buildPageNav();
+
+      function updateActivePageNav() {
+        if (allPages.length === 0) return;
+        const scrollTop = readerContainer.scrollTop;
+        const viewportMid = scrollTop + readerContainer.clientHeight / 3;
+        let active = null;
+        for (const page of allPages) {
+          if (page.offsetTop <= viewportMid) active = page;
+          else break;
+        }
+        document.querySelectorAll(".page-nav-item").forEach(el => el.classList.remove("active"));
+        if (active) {
+          const pageNum = active.getAttribute("data-page");
+          const navItem = document.querySelector(`.page-nav-item[data-target-page="${pageNum}"]`);
+          if (navItem) {
+            navItem.classList.add("active");
+            navItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          }
+          if (statsCurrentPage) statsCurrentPage.textContent = pageNum;
+          try { localStorage.setItem(STORAGE_KEY_LAST_PAGE, pageNum); } catch (e) {}
+        }
+      }
+
+      const floatingNav = document.getElementById("floating-nav");
+      const pagePrevBtn = document.getElementById("page-prev");
+      const pageNextBtn = document.getElementById("page-next");
+      const scrollTopBtn = document.getElementById("scroll-top");
+      const scrollBottomBtn = document.getElementById("scroll-bottom");
+
+      function getCurrentPageIndex() {
+        if (allPages.length === 0) return -1;
+        const scrollTop = readerContainer.scrollTop;
+        const viewportMid = scrollTop + readerContainer.clientHeight / 3;
+        let activeIdx = 0;
+        for (let i = 0; i < allPages.length; i++) {
+          if (allPages[i].offsetTop <= viewportMid) activeIdx = i;
+          else break;
+        }
+        return activeIdx;
+      }
+
+      function gotoPage(idx) {
+        if (idx < 0 || idx >= allPages.length) return;
+        allPages[idx].scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      pagePrevBtn?.addEventListener("click", () => gotoPage(getCurrentPageIndex() - 1));
+      pageNextBtn?.addEventListener("click", () => gotoPage(getCurrentPageIndex() + 1));
+      scrollTopBtn?.addEventListener("click", () => readerContainer.scrollTo({ top: 0, behavior: "smooth" }));
+      scrollBottomBtn?.addEventListener("click", () => readerContainer.scrollTo({ top: readerContainer.scrollHeight, behavior: "smooth" }));
+
+      readerContainer.addEventListener("scroll", () => {
+        const scrollTop = readerContainer.scrollTop;
+        const scrollHeight = readerContainer.scrollHeight;
+        const clientHeight = readerContainer.clientHeight;
+        const notAtTop = scrollTop > 200;
+        const notAtBottom = scrollTop + clientHeight < scrollHeight - 200;
+
+        floatingNav.classList.toggle("visible", notAtTop || notAtBottom);
+
+        if (pagePrevBtn) pagePrevBtn.disabled = getCurrentPageIndex() <= 0;
+        if (pageNextBtn) pageNextBtn.disabled = getCurrentPageIndex() >= allPages.length - 1;
+
+        if (!readerContainer._scrollSaveRAF) {
+          readerContainer._scrollSaveRAF = requestAnimationFrame(() => {
+            try { localStorage.setItem(STORAGE_KEY_SCROLL, String(readerContainer.scrollTop)); } catch (e) {}
+            readerContainer._scrollSaveRAF = null;
+          });
+        }
+
+        updateActivePageNav();
+      }, { passive: true });
+
+      pageJumpInput?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const val = parseInt(pageJumpInput.value, 10);
+          if (!isNaN(val) && val >= 1 && val <= allPages.length) {
+            gotoPage(val - 1);
+            pageJumpInput.value = "";
+            pageJumpInput.blur();
+            closeSidebar();
+          } else {
+            showToast("⚠️ Nomor halaman gak valid", "error");
+          }
+        }
+      });
+
+      const themeToggle = document.getElementById("theme-toggle");
+      themeToggle?.addEventListener("click", () => {
+        const cur = document.documentElement.getAttribute("data-theme");
+        const next = cur === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", next);
+        themeToggle.textContent = next === "light" ? "☀️" : "🌙";
+        try { localStorage.setItem(STORAGE_KEY_THEME, next); } catch (e) {}
+      });
+
+      const fullscreenToggle = document.getElementById("fullscreen-toggle");
+
+      function toggleFullscreen() {
+        const isFs = document.body.classList.toggle("fullscreen");
+        if (fullscreenToggle) fullscreenToggle.classList.toggle("active", isFs);
+        showToast(isFs ? "🖥️ Fullscreen mode" : "🪟 Normal mode", "success");
+      }
+
+      fullscreenToggle?.addEventListener("click", toggleFullscreen);
+
+      const helpOverlay = document.getElementById("help-modal-overlay");
+      const helpToggle = document.getElementById("help-toggle");
+      const helpClose = document.getElementById("help-modal-close");
+
+      function openHelp() {
+        helpOverlay?.classList.add("visible");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeHelp() {
+        helpOverlay?.classList.remove("visible");
+        document.body.style.overflow = "";
+      }
+
+      helpToggle?.addEventListener("click", openHelp);
+      helpClose?.addEventListener("click", closeHelp);
+      helpOverlay?.addEventListener("click", (e) => {
+        if (e.target === helpOverlay) closeHelp();
+      });
+
+      function showToast(msg, type = "success") {
+        const toast = document.getElementById("gw-toast");
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.className = "gw-toast visible " + type;
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => {
+          toast.classList.remove("visible");
+        }, 2000);
+      }
+
+      document.addEventListener("keydown", (e) => {
+        const tag = (e.target.tagName || "").toLowerCase();
+        if (tag === "input" || tag === "textarea") return;
+
+        if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          if (helpOverlay?.classList.contains("visible")) closeHelp();
+          else openHelp();
+          return;
+        }
+
+        if (e.key === "Escape") {
+          if (helpOverlay?.classList.contains("visible")) {
+            closeHelp();
+            return;
+          }
+          if (!sidebar.classList.contains("collapsed")) closeSidebar();
+          if (!rightRail.classList.contains("collapsed")) closeRightRail();
+          return;
+        }
+
+        if (e.key === "f" && !e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          toggleFullscreen();
+          return;
+        }
+
+        if (e.key === "j") {
+          e.preventDefault();
+          gotoPage(getCurrentPageIndex() + 1);
+        } else if (e.key === "k") {
+          e.preventDefault();
+          gotoPage(getCurrentPageIndex() - 1);
+        } else if (e.key === "Home" && !e.ctrlKey) {
+          readerContainer.scrollTo({ top: 0, behavior: "smooth" });
+        } else if (e.key === "End" && !e.ctrlKey) {
+          readerContainer.scrollTo({ top: readerContainer.scrollHeight, behavior: "smooth" });
+        }
+      });
+
+      (function restoreScroll() {
+        try {
+          const lastPage = localStorage.getItem(STORAGE_KEY_LAST_PAGE);
+          const savedScroll = localStorage.getItem(STORAGE_KEY_SCROLL);
+          if (savedScroll && parseInt(savedScroll, 10) > 100) {
+            requestAnimationFrame(() => {
+              readerContainer.scrollTop = parseInt(savedScroll, 10);
+            });
+          } else if (lastPage) {
+            const target = document.getElementById("page-" + lastPage);
+            if (target) {
+              requestAnimationFrame(() => {
+                target.scrollIntoView({ block: "start" });
+              });
+            }
+          }
+        } catch (e) {}
+      })();
+
+      if (window.innerWidth > 1024) openRightRail();
+      else closeRightRail();
+
+      (function setupSwipeGestures() {
+        const EDGE_ZONE = 50;
+        const SWIPE_THRESHOLD = 50;
+        const MAX_VERTICAL = 100;
+        const MAX_DURATION = 800;
+
+        let startX = 0, startY = 0, startTime = 0, tracking = false, fromEdge = false;
+
+        document.addEventListener("touchstart", (e) => {
+          if (e.touches.length !== 1) { tracking = false; return; }
+          const t = e.touches[0];
+          startX = t.clientX;
+          startY = t.clientY;
+          startTime = Date.now();
+          fromEdge = startX <= EDGE_ZONE || startX >= window.innerWidth - EDGE_ZONE;
+          tracking = true;
+        }, { passive: true });
+
+        document.addEventListener("touchend", (e) => {
+          if (!tracking) return;
+          if (e.changedTouches.length !== 1) { tracking = false; return; }
+          tracking = false;
+          const t = e.changedTouches[0];
+          const deltaX = t.clientX - startX;
+          const deltaY = Math.abs(t.clientY - startY);
+          const duration = Date.now() - startTime;
+
+          if (duration > MAX_DURATION) return;
+          if (deltaY > MAX_VERTICAL) return;
+          if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
+
+          const swipedRight = deltaX > 0;
+          const swipedLeft = deltaX < 0;
+          const sidebarOpen = !sidebar.classList.contains("collapsed");
+          const rightRailOpen = !rightRail.classList.contains("collapsed");
+
+          if (sidebarOpen && swipedLeft) { closeSidebar(); return; }
+          if (rightRailOpen && swipedRight) { closeRightRail(); return; }
+          if (!sidebarOpen && swipedRight && (fromEdge || startX < window.innerWidth / 2)) {
+            if (rightRailOpen) closeRightRail();
+            openSidebar();
+            return;
+          }
+          if (!rightRailOpen && swipedLeft && (fromEdge || startX > window.innerWidth / 2)) {
+            if (sidebarOpen) closeSidebar();
+            openRightRail();
+            return;
+          }
+        }, { passive: true });
+      })();
+
+      (function animateLoader() {
+        const loader = document.getElementById("gw-loader");
+        const fill = document.getElementById("gw-loader-fill");
+        const percent = document.getElementById("gw-loader-percent");
+        const textEl = document.getElementById("gw-loader-text");
+        if (!loader || !fill || !percent || !textEl) return;
+
+        const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        const steps = [
+          { at: 0,   text: "Memuat halaman..." },
+          { at: 40,  text: "Render gambar..." },
+          { at: 75,  text: "Menyiapkan viewer..." },
+          { at: 100, text: "Siap!" },
+        ];
+
+        function setProgress(p) {
+          const clamped = Math.max(0, Math.min(100, p));
+          fill.style.width = clamped + "%";
+          percent.textContent = Math.round(clamped) + "%";
+          for (let i = steps.length - 1; i >= 0; i--) {
+            if (clamped >= steps[i].at) {
+              if (textEl.textContent !== steps[i].text) textEl.textContent = steps[i].text;
+              break;
+            }
+          }
+        }
+
+        function dismiss() {
+          if (loader.classList.contains("hidden")) return;
+          loader.classList.add("hidden");
+          setTimeout(() => loader.classList.add("fade-complete"), 450);
+        }
+
+        if (prefersReduced) {
+          setProgress(100);
+          setTimeout(dismiss, 200);
+          return;
+        }
+
+        const startTime = performance.now();
+        const FAKE_DURATION = 800;
+        const FAKE_MAX = 85;
+
+        function tick(now) {
+          const elapsed = now - startTime;
+          const t = Math.min(1, elapsed / FAKE_DURATION);
+          const eased = 1 - Math.pow(1 - t, 3);
+          setProgress(eased * FAKE_MAX);
+          if (t < 1) requestAnimationFrame(tick);
+          else {
+            setTimeout(() => {
+              setProgress(100);
+              setTimeout(dismiss, 250);
+            }, 200);
+          }
+        }
+
+        requestAnimationFrame(tick);
+
+        setTimeout(() => {
+          setProgress(100);
+          setTimeout(dismiss, 200);
+        }, 3000);
+      })();
+
+      if (statsCurrentPage) statsCurrentPage.textContent = "1";
+      if (allPages.length > 0) allPages[0].classList.add("fade-active");
+
+      if (pagePrevBtn) pagePrevBtn.disabled = true;
+      if (pageNextBtn) pageNextBtn.disabled = allPages.length <= 1;
+
+      updateActivePageNav();
+    });
+  </script>
+</body>
+</html>
