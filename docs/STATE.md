@@ -2,7 +2,7 @@
                     GHOSTWRITER — PROJECT STATE & PROGRESS
 ================================================================================
 Project  : GhostWriter 👻📜 (AI Chat Dump to Web Interface Engine)
-Version  : v2.2-GW
+Version  : v2.2.3-GW
 Phase    : Phase 4 (Polish & Stabilization — IN PROGRESS)
 Updated  : 2026-09-19
 ================================================================================
@@ -24,25 +24,40 @@ production-ready:
       Local Storage untuk menarik seluruh riwayat chat + metadata dari
       akun DeepSeek pengguna.
 
-Update terbaru (2026-09-19 — v2.2):
-  ✓ BUGFIX #1: Kurung kurawal JS salah posisi di viewer.html (loadDistIndex)
-    → root cause "gagal render" — fixed
-  ✓ BUGFIX #2: _ensure_vendor() sekarang cek ISI folder, bukan eksistensi
-    → handle folder vendor kosong
-  ✓ BUGFIX #3: Hapus duplikat fetch index.json di viewer.html
-    → sidebar auto-show logic dipindah ke STEP 5
-  ✓ BUGFIX #4: _session_delay di-import di top-level main.py
-  ✓ BUGFIX #5: Backup output ke backups/ (bukan root)
-  ✓ BUGFIX #6: Hapus convo_count dependency di viewer.html
-    → andelin index.json sebagai single source of truth
-    Update terbaru (2026-09-19 — v2.2.1-GW):
-  ✓ Aturan baru "Multi-Batch File Delivery" ditambahkan ke CHECKPOINT 3.10.
-    Detail alur konfirmasi per file ada di sana.
-  ✓ Release v2.2-GW live di GitHub (nexterade/GhostWriter).
-  Update terbaru (2026-09-19 — v2.2.2-GW):
-  ✓ Aturan baru "Full Code Delivery" ditambahkan ke CHECKPOINT 3.10.
-    Semua file patched/fixed WAJIB dikirim full code, bukan diff.
+Update terbaru (2026-09-19 — v2.2.3):
+  ✓ BACKLOG.md direstrukturisasi — semua PR pending dikelompokkan jadi
+    9 "Action Fixed" (A-I). Konsep: 1 Action = 1 Batch File = 1 Sesi.
+  ✓ 10 PR baru ditambahkan ke backlog:
+    - PR-39: Auto-Backup Sebelum Overwrite
+    - PR-40: Integrity Check Sebelum Render
+    - PR-41: Checksum / Manifest di Index.json
+    - PR-42: Keyboard Shortcut Overlay
+    - PR-43: Export Single Message
+    - PR-44: Onboarding Tour Pertama Kali
+    - PR-45: Lazy Load Attachment Images
+    - PR-46: Pagination di Landing Page
+    - PR-47: CLI Flag --stats
+    - PR-48: Auto-Detect Broken Links
+  ✓ Kategorisasi final:
+    Action A (Data Safety)        : PR-39, PR-40
+    Action B (UX Quick Wins)      : PR-42, PR-43
+    Action C (Index Safety Scale) : PR-41, PR-46, PR-48
+    Action D (Polish Backlog)     : PR-30, PR-32, PR-33
+    Action E (Perf & Onboarding)  : PR-44, PR-45
+    Action F (PDF Export)         : PR-36 (DEFERRED)
+    Action G (CLI Convenience)    : PR-47
+    Action H (Termux Integration) : PR-34
+    Action I (Advanced Features)  : PR-37, PR-38 (BACKLOG)
+
+Update terbaru (2026-09-19 — v2.2.2):
+  ✓ CHECKPOINT.md diupdate: split 3.10 (Format Full Code) & 3.11
+    (Alur Multi-Batch Confirmation).
+  ✓ Bentrok CHECKPOINT fixed (3.4, 3.7, versi bumped).
   ✓ PR-31 (Skip Delay Attachment Pending) — implemented via circuit breaker.
+
+Update terbaru (2026-09-19 — v2.2.1):
+  ✓ Release v2.2-GW live di GitHub (nexterade/GhostWriter).
+  ✓ Aturan baru "Multi-Batch File Delivery" ditambahkan ke CHECKPOINT 3.11.
 
 Update sebelumnya (2026-09-18 — Phase 3 COMPLETE):
   ✓ Multi-format parser: JSON (3 skema), Markdown, DOCX
@@ -57,9 +72,6 @@ Update sebelumnya (2026-09-18 — Phase 3 COMPLETE):
   ✓ Attachment pending manifest (PENDING.md) auto-generated
   ✓ Print stylesheet & scroll position memory
 
-Update sebelumnya (2026-09-18 — v2.1):
-  ✓ Aturan baru "false fenced code" ditambahkan ke CHECKPOINT section 3.9.
-
 
 ================================================================================
 2. PROJECT DIRECTORY TREE
@@ -67,7 +79,7 @@ Update sebelumnya (2026-09-18 — v2.1):
 
 GhostWriter/
 ├── .deepseek_token              [Auto] Token cache (chmod 600)
-├── .gitignore                   Ignore public, attachments, cache, token
+├── .gitignore                   Ignore public, backups, attachments, cache
 ├── main.py                      CLI Wizard (lokal & live fetcher)
 ├── exporter.py                  HTML compiler + auto-index trigger
 ├── serve.py                     Local HTTP server (auto-detect Termux)
@@ -156,6 +168,8 @@ Fitur:
   ✓ Debug mode via GW_DEBUG=1
   ✓ Session tracking (skip kalo gak ada update)
   ✓ Incremental backup via state file (deepseek_backup_state.json)
+  ✓ PR-31: Circuit breaker untuk attachment pending — kalo udah 1x
+    kena HTML challenge, request berikutnya skip network + delay.
 
 Anti-Suspend Strategy:
   ✓ Human-like delay + jitter (default 1-3s antar request)
@@ -295,6 +309,35 @@ Usage:
   python3 sync.py
 
 
+3.9 Action Fixed Framework (v2.2.3) — NEW
+────────────────────────────────────────────────────────────────────────────────
+
+Konsep:
+  Semua PR pending dikelompokkan jadi "Action Fixed" — 1 Action = 1 Batch
+  File = 1 Sesi Kerja. Tujuan: minim file bolak-balik, konsisten sama
+  CHECKPOINT 3.1 (Batch by File).
+
+9 Action Fixed:
+  Action A (Data Safety)        : PR-39, PR-40
+  Action B (UX Quick Wins)      : PR-42, PR-43
+  Action C (Index Safety Scale) : PR-41, PR-46, PR-48
+  Action D (Polish Backlog)     : PR-30, PR-32, PR-33
+  Action E (Perf & Onboarding)  : PR-44, PR-45
+  Action F (PDF Export)         : PR-36 (DEFERRED)
+  Action G (CLI Convenience)    : PR-47
+  Action H (Termux Integration) : PR-34
+  Action I (Advanced Features)  : PR-37, PR-38 (BACKLOG)
+
+Urutan prioritas (rekomendasi):
+  A → B → D → C → E → F → G → H → I
+
+Estimasi waktu:
+  High priority (A-D)   : ~10-13 jam
+  Medium (E-H)          : ~7-11 jam
+  Low (I)               : ~10-14 jam
+  TOTAL                 : ~28-36 jam
+
+
 ================================================================================
 4. KNOWN LIMITATIONS
 ================================================================================
@@ -303,6 +346,7 @@ Usage:
       → Butuh session cookie browser.
       → Solusi: user taruh manual di ./attachments/
       → Manifest PENDING.md auto-generated
+      → Mitigasi PR-31: circuit breaker — kalo 1x gagal, skip sisanya.
 
   [2] file_id di history_messages kadang kosong
       → API strip metadata untuk security.
@@ -311,7 +355,7 @@ Usage:
   [3] Dedup nama convo di index.html (PARTIAL FIX)
       → _normalize_title() strip timestamp suffix + angka kurung.
       → RISIKO: "Chat (1)" dan "Chat (2)" bisa dianggap duplikat.
-      → Solusi planned: dedup by ID prefix, keep highest mtime.
+      → Solusi planned: PR-30 (Action D).
 
   [4] CDN fallback kalo vendor/ kosong
       → vendor/ auto-copy dari root ke public/ via exporter.py
@@ -320,12 +364,21 @@ Usage:
 
   [5] Termux raw input gak works di on-screen keyboard
       → Checklist interaktif fallback ke mode angka
-      → Termux API integration planned untuk fix
+      → Solusi planned: PR-34 (Action H)
 
   [6] Backup output dedup
       → Setiap backup nulis backup_bulk.json (overwrite).
       → Belum ada versioning per tanggal.
-      → Solusi planned: tambah timestamp suffix optional.
+      → Solusi planned: PR-32 (Action D)
+
+  [7] Stale folder di public/history/
+      → Kalo source backup dihapus, folder di public/history/ tetep ada.
+      → Landing page masih nampilin convo "hantu".
+      → Solusi planned: PR-33 (Action D)
+
+  [8] Scale issue di landing page
+      → Kalo 500+ convo, semua card di-render sekaligus (lag).
+      → Solusi planned: PR-46 (Action C)
 
 
 ================================================================================
@@ -346,7 +399,16 @@ Usage:
   │ Phase 4  │ Struktur public/history/ migration │ ✅ Done      │
   │ Phase 4  │ serve.py + sync.py                 │ ✅ Done      │
   │ Phase 4  │ BUGFIX #1-#6 (render & vendor)     │ ✅ Done      │
-  │ Phase 4  │ Polish & optional features         │ ⏳ Next      │
+  │ Phase 4  │ PR-31 Circuit breaker attachment   │ ✅ Done      │
+  │ Phase 4  │ Action A (Data Safety)             │ ⏳ Next      │
+  │ Phase 4  │ Action B (UX Quick Wins)           │ ⏳ Next      │
+  │ Phase 4  │ Action C (Index Safety & Scale)    │ ⏳ Pending   │
+  │ Phase 4  │ Action D (Polish Backlog)          │ ⏳ Pending   │
+  │ Phase 5  │ Action E (Perf & Onboarding)       │ ⏳ Pending   │
+  │ Phase 5  │ Action F (PDF Export)              │ 🕐 Deferred  │
+  │ Phase 5  │ Action G (CLI Convenience)         │ ⏳ Pending   │
+  │ Phase 5  │ Action H (Termux Integration)      │ ⏳ Pending   │
+  │ Phase 5  │ Action I (Advanced Features)       │ 📋 Backlog   │
   └──────────┴────────────────────────────────────┴──────────────┘
 
 
@@ -354,19 +416,51 @@ Usage:
 6. NEXT STEPS
 ================================================================================
 
-Priority 1 — Polish (sisa Phase 4):
-  • Fix dedup by title edge case (Chat (1) vs Chat (2))
-  • Skip delay kalo attachment pasti pending (hemat waktu)
-  • Optional: backup versioning pakai timestamp suffix
-  • Optional: prune public/history/ yang stale (gak ada di source)
+Priority 1 — Action A: Data Safety (1.5 jam)
+  • PR-39: Auto-Backup Sebelum Overwrite
+  • PR-40: Integrity Check Sebelum Render
+  • Files: exporter.py, main.py
 
-Priority 2 — Fitur Baru:
-  • Termux API integration (dialog native untuk checklist)
-  • Search in all conversations (index.html search body content juga)
-  • Export individual convo ke PDF
-  • Category/tag untuk convo
+Priority 2 — Action B: UX Quick Wins (2.5 jam)
+  • PR-42: Keyboard Shortcut Overlay
+  • PR-43: Export Single Message
+  • Files: templates/viewer.html
 
-Priority 3 — Dokumentasi:
+Priority 3 — Action D: Polish Backlog Lama (2-3 jam)
+  • PR-30: Fix Dedup Edge Case
+  • PR-32: Backup Versioning
+  • PR-33: Prune Stale public/history/
+  • Files: tools/dist_index.py, main.py, sync.py
+
+Priority 4 — Action C: Index Safety & Scale (4-5 jam)
+  • PR-41: Checksum / Manifest di Index.json
+  • PR-46: Pagination / Infinite Scroll
+  • PR-48: Auto-Detect Broken Links
+  • Files: tools/dist_index.py, sync.py
+
+Priority 5 — Action E: Perf & Onboarding (3 jam)
+  • PR-44: Onboarding Tour Pertama Kali
+  • PR-45: Lazy Load Attachment Images
+  • Files: templates/viewer.html, tools/dist_index.py, parsers/json_parser.py
+
+Priority 6 — Action F: PDF Export (2-4 jam, DEFERRED)
+  • PR-36: Export Individual Convo to PDF
+  • Files: templates/viewer.html, main.py
+
+Priority 7 — Action G: CLI Convenience (30 menit)
+  • PR-47: CLI Flag --stats
+  • Files: main.py
+
+Priority 8 — Action H: Termux Integration (1-2 jam)
+  • PR-34: Termux API Integration
+  • Files: tools/checklist.py, main.py
+
+Priority 9 — Action I: Advanced Features (10-14 jam, BACKLOG)
+  • PR-37: Category/Tag untuk Convo
+  • PR-38: Diff View
+  • Butuh design dulu sebelum eksekusi
+
+Dokumentasi:
   • Update STATE.md kalo ada perubahan
   • Update BACKLOG.md saat milestone baru
   • Update CHECKPOINT.md kalo ada aturan baru
@@ -458,6 +552,29 @@ Lesson:
   • Auto-close bracket di editor = penyelamat.
 
 
+7.5 Circuit Breaker Pattern (v2.2.2)
+────────────────────────────────────────────────────────────────────────────────
+
+Konteks:
+  Kalo backup convo dengan banyak attachment, tiap attachment butuh delay
+  1-3s sebelum request. Tapi kalo endpoint /file/download balikin HTML
+  challenge (yang selalu kejadian via Bearer token), SEMUA request bakal
+  gagal — dan delay-nya tetep jalan.
+
+Solusi (PR-31):
+  Circuit breaker — kalo 1x kena HTML challenge, set flag
+  _attachment_download_disabled = True. Semua request berikutnya skip
+  network + delay sepenuhnya.
+
+Efek:
+  Sebelum: 50 attachment × delay 1-3s = 50-150 detik buang-buang.
+  Setelah: 1x delay (attachment #1), sisanya instant pending.
+  Saving: ~97% waktu backup kalo banyak attachment pending.
+
+Referensi:
+  Pattern ini dari Michael Nygard, buku "Release It!" (2007).
+
+
 ================================================================================
-                     END OF STATE — GHOSTWRITER v2.2-GW
+                     END OF STATE — GHOSTWRITER v2.2.3-GW
 ================================================================================
