@@ -188,6 +188,9 @@ class DeepSeekLiveBackup:
         self.session.headers.update(self.headers)
         self.pending_attachments: List[Dict[str, Any]] = []
         self._processed_attachments = set()
+        # FIX PR-31: circuit breaker — kalo udah kena HTML challenge 1x,
+        # semua request attachment berikutnya pasti gagal juga.
+        self._attachment_download_disabled = False
         os.makedirs(self.download_dir, exist_ok=True)
         self.state = _load_state()
 
@@ -363,18 +366,35 @@ class DeepSeekLiveBackup:
         save_path = os.path.join(self.download_dir, file_name)
 
         attachment_key = (file_id, file_name)
+
+        # === EARLY RETURNS (sebelum delay & network) ===
+
+        # 1. Udah pernah di-process di sesi ini
         if attachment_key in self._processed_attachments:
             return "skipped"
         self._processed_attachments.add(attachment_key)
 
+        # 2. File lokal udah ada & size cocok
         if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
             local_size = os.path.getsize(save_path)
             if not (file_size and local_size != file_size):
                 return "success"
 
+        # 3. Skip if local (dari caller)
         if skip_if_local:
             return "skipped"
 
+        # 4. FIX PR-31: circuit breaker aktif — kalo udah pernah kena
+        #    HTML challenge, semua request berikutnya PASTI gagal juga.
+        #    Skip delay + network sepenuhnya.
+        if self._attachment_download_disabled:
+            self.pending_attachments.append({
+                "file_name": file_name, "file_id": file_id,
+                "file_size": file_size, "reason": "circuit_breaker_active",
+            })
+            return "pending"
+
+        # 5. file_id kosong — udah pasti pending, gak perlu delay
         if not file_id:
             self.pending_attachments.append({
                 "file_name": file_name, "file_id": None,
@@ -382,6 +402,7 @@ class DeepSeekLiveBackup:
             })
             return "pending"
 
+        # === BARU DELAY — request beneran bakal dikirim ===
         _human_delay()
         url = f"{DEEPSEEK_API_BASE}/file/download"
         res = self._request("GET", url, params={"file_id": file_id}, timeout=30, allow_redirects=True)
@@ -417,6 +438,9 @@ class DeepSeekLiveBackup:
                 ctype = res.headers.get("Content-Type", "").lower()
 
         if "text/html" in ctype:
+            # FIX PR-31: trip circuit breaker — set flag, semua request
+            # attachment berikutnya skip network + delay.
+            self._attachment_download_disabled = True
             self.pending_attachments.append({
                 "file_name": file_name, "file_id": file_id,
                 "file_size": file_size, "reason": "html_response_need_session",

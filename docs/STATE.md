@@ -39,6 +39,10 @@ Update terbaru (2026-09-19 — v2.2):
   ✓ Aturan baru "Multi-Batch File Delivery" ditambahkan ke CHECKPOINT 3.10.
     Detail alur konfirmasi per file ada di sana.
   ✓ Release v2.2-GW live di GitHub (nexterade/GhostWriter).
+  Update terbaru (2026-09-19 — v2.2.2-GW):
+  ✓ Aturan baru "Full Code Delivery" ditambahkan ke CHECKPOINT 3.10.
+    Semua file patched/fixed WAJIB dikirim full code, bukan diff.
+  ✓ PR-31 (Skip Delay Attachment Pending) — implemented via circuit breaker.
 
 Update sebelumnya (2026-09-18 — Phase 3 COMPLETE):
   ✓ Multi-format parser: JSON (3 skema), Markdown, DOCX
