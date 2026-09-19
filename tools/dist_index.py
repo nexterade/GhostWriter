@@ -68,32 +68,104 @@ def _extract_first_created(html_path: str) -> str:
     return ""
 
 
-# === TITLE NORMALIZATION (DEDUP) ===
+# === TITLE NORMALIZATION (PR-30 FIXED) ===
 
+# Pattern timestamp suffix — cuma ini yang boleh di-strip unconditional
 _TS_SUFFIX_PATTERNS = [
     re.compile(r"\s+\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}\s*$"),
     re.compile(r"\s+\d{4}-\d{2}-\d{2}\s*$"),
-    re.compile(r"\s+\(\d+\)\s*$"),
     re.compile(r"_\d{4}-\d{2}-\d{2}\s*$"),
 ]
 
+# Pattern angka kurung — DIPISAH, cuma di-strip pas dedup conditional
+_PAREN_NUM_PATTERN = re.compile(r"\s*\(\d+\)\s*$")
+
 
 def _normalize_title(title: str) -> str:
+    """
+    PR-30: Normalize title buat dedup key.
+
+    Yang di-strip:
+        - Timestamp suffix (YYYY-MM-DD, YYYY-MM-DD HH:MM)
+        - Underscore + timestamp suffix
+
+    Yang TIDAK di-strip:
+        - Angka dalam kurung "(1)", "(2)" — biar "Chat (1)" dan "Chat (2)"
+          dianggap BEDA kalo emang beda convo.
+    """
     t = title.strip()
     for pat in _TS_SUFFIX_PATTERNS:
         t = pat.sub("", t)
     return t.strip().lower()
 
 
+def _normalize_title_strip_paren(title: str) -> str:
+    """
+    PR-30: Versi aggressive — strip angka kurung juga.
+    Dipake sebagai FALLBACK kalo dedup basic udah selesai, dan masih ada
+    konvo dengan title yang mirip banget.
+    """
+    t = _normalize_title(title)
+    t = _PAREN_NUM_PATTERN.sub("", t)
+    return t.strip().lower()
+
+
 def _dedup_by_title(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    seen = {}
+    """
+    PR-30: Dedup by normalized title.
+
+    Alur:
+        1. Pass #1: dedup by exact normalized title (tanpa strip angka kurung).
+           Ini handle "React Hooks (1)" vs "React Hooks (2)" sebagai BEDA.
+        2. Pass #2 (kalo masih ada > MAX_INDEX_ITEMS): dedup pake aggressive
+           normalize (strip angka kurung), keep highest mtime.
+
+    Keep highest mtime kalo ada duplikat (convo terbaru menang).
+    """
+    # Pass #1: dedup by exact normalized title
+    seen: Dict[str, Dict[str, Any]] = {}
     for it in items:
-        key = _normalize_title(it["title"])
+        key = _normalize_title(it.get("title", ""))
         if not key:
             key = it["id"].lower()
         if key not in seen:
             seen[key] = it
+        else:
+            # Keep yang mtime-nya lebih baru
+            if it.get("mtime", 0) > seen[key].get("mtime", 0):
+                seen[key] = it
     return list(seen.values())
+
+
+def _dedup_by_title_aggressive(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    PR-30: Versi aggressive buat fallback kalo list masih terlalu panjang.
+    Strip angka kurung — "Chat (1)" & "Chat (2)" dianggap sama.
+    """
+    seen: Dict[str, Dict[str, Any]] = {}
+    for it in items:
+        key = _normalize_title_strip_paren(it.get("title", ""))
+        if not key:
+            key = it["id"].lower()
+        if key not in seen:
+            seen[key] = it
+        else:
+            if it.get("mtime", 0) > seen[key].get("mtime", 0):
+                seen[key] = it
+    return list(seen.values())
+
+
+def _convo_sort_key(it: Dict[str, Any]) -> tuple:
+    """
+    PR-30: Sort key stabil.
+    Prioritas: ID numeric desc (kalo ID = Unix epoch) -> mtime desc.
+    """
+    convo_id = it.get("id", "")
+    try:
+        numeric_id = int(convo_id)
+    except (ValueError, TypeError):
+        numeric_id = 0
+    return (numeric_id, it.get("mtime", 0))
 
 
 # === SCAN ===
@@ -141,10 +213,14 @@ def scan_dist() -> List[Dict[str, Any]]:
         })
 
     # Sort by ID (timestamp) desc — ID lebih besar = lebih baru
-    results.sort(key=lambda x: int(x["id"]) if x["id"].isdigit() else 0, reverse=True)
+    results.sort(key=_convo_sort_key, reverse=True)
 
-    # Dedup by title
+    # PR-30: Dedup pake versi normal (keep "Chat (1)" & "Chat (2)" sebagai beda)
     results = _dedup_by_title(results)
+
+    # Kalo masih > MAX_INDEX_ITEMS, pake aggressive dedup
+    if len(results) > MAX_INDEX_ITEMS:
+        results = _dedup_by_title_aggressive(results)
 
     if len(results) > MAX_INDEX_ITEMS:
         results = results[:MAX_INDEX_ITEMS]
@@ -296,7 +372,6 @@ def write_index_html() -> str:
     generated = time.strftime("%Y-%m-%d %H:%M:%S")
     favicon_link = get_favicon_link()
 
-    # Author signature
     AUTHOR = "@nexterade"
 
     html = f"""<!DOCTYPE html>
