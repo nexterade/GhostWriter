@@ -185,6 +185,98 @@ def get_parser_for_file(file_path: str):
 
 
 # ============================================================
+# PR-40: INTEGRITY CHECK
+# ============================================================
+
+def _validate_chat_data(chat_data: dict, convo_label: str = "") -> tuple:
+    """
+    PR-40: Validasi chat_data setelah parse.
+
+    Return: (is_valid: bool, errors: list, warnings: list)
+    """
+    errors = []
+    warnings = []
+    label = f"'{convo_label}'" if convo_label else "convo"
+
+    if not isinstance(chat_data, dict):
+        errors.append(f"{label}: hasil parse bukan dict (got {type(chat_data).__name__})")
+        return False, errors, warnings
+
+    # 1. Title gak boleh kosong
+    title = (chat_data.get("title") or "").strip()
+    if not title:
+        warnings.append(f"{label}: title kosong, bakal pake default 'Tanpa Judul'")
+
+    # 2. Messages harus list
+    messages = chat_data.get("messages")
+    if not isinstance(messages, list):
+        errors.append(f"{label}: 'messages' bukan list (got {type(messages).__name__})")
+        return False, errors, warnings
+
+    # 3. Messages gak boleh kosong
+    if len(messages) == 0:
+        errors.append(f"{label}: 0 pesan — file mungkin korup atau schema beda")
+        return False, errors, warnings
+
+    # 4. Tiap message harus punya role & content valid
+    invalid_msgs = 0
+    empty_content = 0
+    for i, msg in enumerate(messages):
+        if not isinstance(msg, dict):
+            invalid_msgs += 1
+            continue
+        role = msg.get("role")
+        if role not in ("user", "assistant", "system"):
+            invalid_msgs += 1
+        content = msg.get("content")
+        if not content or not str(content).strip():
+            empty_content += 1
+
+    if invalid_msgs > 0:
+        warnings.append(
+            f"{label}: {invalid_msgs} pesan dengan role invalid (bukan user/assistant/system)"
+        )
+
+    if empty_content > 0:
+        warnings.append(
+            f"{label}: {empty_content} pesan dengan content kosong"
+        )
+
+    # Kalo > 50% message kosong, anggap error (kemungkinan parse gagal)
+    if empty_content > len(messages) / 2:
+        errors.append(
+            f"{label}: >50% pesan kosong ({empty_content}/{len(messages)}) — parse kemungkinan gagal"
+        )
+        return False, errors, warnings
+
+    return True, errors, warnings
+
+
+def _check_attachments_in_html(html_path: str) -> tuple:
+    """
+    PR-40: Cek attachment base64 di HTML — apakah file fisiknya ada.
+
+    Return: (total, missing) — jumlah attachment total & yang ilang.
+    """
+    if not os.path.isfile(html_path):
+        return 0, 0
+
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            content = f.read()
+    except OSError:
+        return 0, 0
+
+    # Cari attachment-box yang class-nya "missing" (kalo ada)
+    # Attachment yang gak punya file fisik biasanya ditandai class "missing"
+    # di template, atau gak ada <img> di dalamnya
+    total = len(re.findall(r'class="attachment-box', content))
+    missing = len(re.findall(r'class="attachment-box missing', content))
+
+    return total, missing
+
+
+# ============================================================
 # LIVE BACKUP
 # ============================================================
 
@@ -336,7 +428,7 @@ def handle_live_deepseek_backup() -> bool:
         pending_count = len(set(a["file_name"] for a in fetcher.pending_attachments))
         print_warn(f"{pending_count} attachment pending - lihat: {manifest}")
 
-    # Tanya render (sekali aja, PR-30C)
+    # Tanya render (sekali aja)
     print()
     if _prompt_yes_no("Render ke HTML sekarang?", default="y"):
         _do_render(bulk_name, auto_render_all=True)
@@ -364,14 +456,20 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
         print_error(str(e))
         return
 
+    # === PR-40: Validate parser ===
     if not parser.validate():
-        print_error("Validasi file gagal.")
+        print_error("Validasi file gagal — file korup atau format gak dikenali.")
         return
 
     convo_list = parser.list_conversations()
     if not convo_list:
         print_error("Tidak ada percakapan di file ini.")
         return
+
+    # === PR-40: Validate convo list ===
+    empty_titles = sum(1 for c in convo_list if not (c.get("title") or "").strip())
+    if empty_titles == len(convo_list):
+        print_warn(f"Semua {len(convo_list)} convo gak punya title. Bakal pake default.")
 
     # Tentukan convo yang mau di-render
     if auto_render_all or (selected_index is None and len(convo_list) > 1):
@@ -406,6 +504,7 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
 
     rendered = []
     failed = []
+    skipped_integrity = []
 
     for pos, idx in enumerate(indices_to_render, 1):
         try:
@@ -428,6 +527,21 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
             continue
         spinner.stop(f"Parsed: '{chat_data.get('title')}' - {len(chat_data.get('messages', []))} pesan")
 
+        # === PR-40: Integrity check ===
+        is_valid, errors, warnings = _validate_chat_data(
+            chat_data, convo_label=chat_data.get("title") or convo.get("title", f"#{idx}")
+        )
+
+        for w in warnings:
+            print_warn(f"  {w}")
+
+        if not is_valid:
+            print_error(f"  Integrity check GAGAL — skip render:")
+            for err in errors:
+                print_error(f"    - {err}")
+            skipped_integrity.append(chat_data.get("title") or convo.get("title", f"#{idx}"))
+            continue
+
         # Output path: public/history/<id>/index.html
         output_path = os.path.join(PUBLIC_DIR, HISTORY_SUBDIR, convo_id, "index.html")
 
@@ -448,6 +562,11 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
             continue
         spinner.stop("Render selesai")
 
+        # === PR-40: Check attachment di HTML ===
+        att_total, att_missing = _check_attachments_in_html(final_path)
+        if att_total > 0 and att_missing > 0:
+            print_warn(f"  {att_missing}/{att_total} attachment ilang (liat attachments/PENDING.md)")
+
         rendered.append({
             "id": convo_id,
             "title": chat_data.get("title", "Tanpa Judul"),
@@ -460,6 +579,8 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
     print_section("Render Selesai", icon="check")
     if rendered:
         print_success(f"{len(rendered)} convo berhasil di-render")
+    if skipped_integrity:
+        print_warn(f"{len(skipped_integrity)} convo di-skip (integrity check gagal): {', '.join(skipped_integrity)}")
     if failed:
         print_error(f"{len(failed)} gagal: {', '.join(failed)}")
 

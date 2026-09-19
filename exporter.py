@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import json
+import time
 from typing import Dict, Any
 from jinja2 import Environment, FileSystemLoader
 
@@ -9,6 +10,10 @@ from tools.theme import (
     get_favicon_link,
     LOGO_SVG_INLINE,
 )
+
+
+# === PR-39: Auto-Backup Config ===
+MAX_BACKUPS_PER_CONVO = 3  # Simpen maksimal 3 versi lama per convo
 
 
 def _extract_title_from_html(html_path: str) -> str:
@@ -22,6 +27,69 @@ def _extract_title_from_html(html_path: str) -> str:
     except Exception:
         pass
     return ""
+
+
+def _backup_existing_file(target_path: str) -> str:
+    """
+    PR-39: Backup file yang ada sebelum ditimpa.
+
+    Return: path backup (kalo berhasil), atau "" (kalo gak ada file / gagal).
+    """
+    if not os.path.isfile(target_path):
+        return ""
+
+    try:
+        # Format timestamp: YYYYMMDD-HHMMSS
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        base_dir = os.path.dirname(target_path)
+        base_name = os.path.basename(target_path)  # index.html
+
+        # Nama backup: index-20260919-103045.html.bak
+        name_no_ext, ext = os.path.splitext(base_name)
+        backup_name = f"{name_no_ext}-{timestamp}{ext}.bak"
+        backup_path = os.path.join(base_dir, backup_name)
+
+        shutil.copy2(target_path, backup_path)
+        return backup_path
+    except OSError:
+        return ""
+
+
+def _prune_old_backups(target_dir: str, max_keep: int = MAX_BACKUPS_PER_CONVO):
+    """
+    PR-39: Hapus backup lama, simpen maksimal `max_keep` versi terbaru.
+
+    Backup file pattern: index-YYYYMMDD-HHMMSS.html.bak
+    """
+    if not os.path.isdir(target_dir):
+        return
+
+    try:
+        entries = os.listdir(target_dir)
+    except OSError:
+        return
+
+    # Filter backup files, sort by mtime (paling lama duluan)
+    backups = []
+    for name in entries:
+        if not name.endswith(".html.bak"):
+            continue
+        full_path = os.path.join(target_dir, name)
+        try:
+            mtime = os.path.getmtime(full_path)
+            backups.append((mtime, full_path))
+        except OSError:
+            continue
+
+    backups.sort(key=lambda x: x[0])  # asc — paling lama di depan
+
+    # Kalo lebih dari max_keep, hapus yang paling lama
+    if len(backups) > max_keep:
+        for _, old_path in backups[: len(backups) - max_keep]:
+            try:
+                os.remove(old_path)
+            except OSError:
+                pass
 
 
 class HTMLExporter:
@@ -98,6 +166,18 @@ class HTMLExporter:
             os.makedirs(out_dir, exist_ok=True)
 
         self._ensure_vendor(out_dir)
+
+        # === PR-39: Auto-backup sebelum overwrite ===
+        backup_path = _backup_existing_file(output_path)
+        if backup_path:
+            try:
+                from tools.loading import print_info
+                print_info(f"Backup: {os.path.basename(backup_path)}")
+            except Exception:
+                pass
+
+        # === PR-39: Prune backup lama ===
+        _prune_old_backups(out_dir, max_keep=MAX_BACKUPS_PER_CONVO)
 
         template = self.env.get_template(self.template_name)
         rendered_html = template.render(
