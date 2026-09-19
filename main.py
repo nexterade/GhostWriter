@@ -5,11 +5,12 @@ import glob
 import json
 import re
 import argparse
+import traceback
 from parsers.json_parser import JSONChatParser
 from parsers.md_parser import MarkdownChatParser
 from parsers.docx_parser import DocxChatParser
 from exporter import HTMLExporter
-from tools.deepseek_backup import DeepSeekLiveBackup, _session_delay
+from tools.deepseek_backup import DeepSeekLiveBackup, _session_delay, AuthExpiredError
 from tools.checklist import interactive_checklist
 from tools.loading import (
     print_banner, print_section, print_status, print_success,
@@ -202,23 +203,19 @@ def _validate_chat_data(chat_data: dict, convo_label: str = "") -> tuple:
         errors.append(f"{label}: hasil parse bukan dict (got {type(chat_data).__name__})")
         return False, errors, warnings
 
-    # 1. Title gak boleh kosong
     title = (chat_data.get("title") or "").strip()
     if not title:
         warnings.append(f"{label}: title kosong, bakal pake default 'Tanpa Judul'")
 
-    # 2. Messages harus list
     messages = chat_data.get("messages")
     if not isinstance(messages, list):
         errors.append(f"{label}: 'messages' bukan list (got {type(messages).__name__})")
         return False, errors, warnings
 
-    # 3. Messages gak boleh kosong
     if len(messages) == 0:
         errors.append(f"{label}: 0 pesan — file mungkin korup atau schema beda")
         return False, errors, warnings
 
-    # 4. Tiap message harus punya role & content valid
     invalid_msgs = 0
     empty_content = 0
     for i, msg in enumerate(messages):
@@ -242,7 +239,6 @@ def _validate_chat_data(chat_data: dict, convo_label: str = "") -> tuple:
             f"{label}: {empty_content} pesan dengan content kosong"
         )
 
-    # Kalo > 50% message kosong, anggap error (kemungkinan parse gagal)
     if empty_content > len(messages) / 2:
         errors.append(
             f"{label}: >50% pesan kosong ({empty_content}/{len(messages)}) — parse kemungkinan gagal"
@@ -255,8 +251,7 @@ def _validate_chat_data(chat_data: dict, convo_label: str = "") -> tuple:
 def _check_attachments_in_html(html_path: str) -> tuple:
     """
     PR-40: Cek attachment base64 di HTML — apakah file fisiknya ada.
-
-    Return: (total, missing) — jumlah attachment total & yang ilang.
+    Return: (total, missing)
     """
     if not os.path.isfile(html_path):
         return 0, 0
@@ -267,9 +262,6 @@ def _check_attachments_in_html(html_path: str) -> tuple:
     except OSError:
         return 0, 0
 
-    # Cari attachment-box yang class-nya "missing" (kalo ada)
-    # Attachment yang gak punya file fisik biasanya ditandai class "missing"
-    # di template, atau gak ada <img> di dalamnya
     total = len(re.findall(r'class="attachment-box', content))
     missing = len(re.findall(r'class="attachment-box missing', content))
 
@@ -298,6 +290,7 @@ def handle_live_deepseek_backup() -> bool:
             spinner.stop("Token kedaluwarsa", status="warn")
             invalidate_cached_token()
             token = ""
+            fetcher = None
 
     if not token:
         print_section("Cara Ambil Token", icon="key")
@@ -319,6 +312,20 @@ def handle_live_deepseek_backup() -> bool:
             return False
         spinner.stop("Login sukses, token disimpan (chmod 600)", status="ok")
         save_cached_token(token)
+
+    # === FIX #3: Wrap seluruh flow backup dalam try/except AuthExpiredError ===
+    try:
+        return _run_live_backup_flow(fetcher)
+    except AuthExpiredError:
+        print()
+        print_error("Token expired di tengah proses — silakan login ulang.")
+        invalidate_cached_token()
+        print_info("Token cache udah dihapus. Balik ke menu, pilih [2] lagi buat login.")
+        return False
+
+
+def _run_live_backup_flow(fetcher: DeepSeekLiveBackup) -> bool:
+    """FIX #3: Flow backup dipisah biar bisa di-wrap try/except dengan rapi."""
 
     print_section("Mode Backup", icon="db")
     mode_input = _prompt("[i]ncremental (default) / [f]ull", default="i")
@@ -387,7 +394,13 @@ def handle_live_deepseek_backup() -> bool:
         print_section(f"[{pos}/{total_sel}] {title}", icon="ghost")
 
         session_label = f"- Sesi {pos}/{total_sel}"
-        data = fetcher.backup_session(s, debug=debug_mode, session_label=session_label)
+
+        try:
+            data = fetcher.backup_session(s, debug=debug_mode, session_label=session_label)
+        except AuthExpiredError:
+            # Re-raise biar di-handle di handle_live_deepseek_backup()
+            raise
+
         if data:
             convo_results.append(data)
         elif fetcher.incremental and not force_full:
@@ -405,7 +418,7 @@ def handle_live_deepseek_backup() -> bool:
             print_error("Semua sesi gagal disedot.")
         return False
 
-    # Simpan dump JSON ke backups/ (BUKAN di root)
+    # Simpan dump JSON ke backups/
     os.makedirs(BACKUP_DIR, exist_ok=True)
     if len(convo_results) > 1:
         bulk_name = os.path.join(BACKUP_DIR, "backup_bulk.json")
@@ -428,7 +441,6 @@ def handle_live_deepseek_backup() -> bool:
         pending_count = len(set(a["file_name"] for a in fetcher.pending_attachments))
         print_warn(f"{pending_count} attachment pending - lihat: {manifest}")
 
-    # Tanya render (sekali aja)
     print()
     if _prompt_yes_no("Render ke HTML sekarang?", default="y"):
         _do_render(bulk_name, auto_render_all=True)
@@ -456,7 +468,6 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
         print_error(str(e))
         return
 
-    # === PR-40: Validate parser ===
     if not parser.validate():
         print_error("Validasi file gagal — file korup atau format gak dikenali.")
         return
@@ -466,12 +477,10 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
         print_error("Tidak ada percakapan di file ini.")
         return
 
-    # === PR-40: Validate convo list ===
     empty_titles = sum(1 for c in convo_list if not (c.get("title") or "").strip())
     if empty_titles == len(convo_list):
         print_warn(f"Semua {len(convo_list)} convo gak punya title. Bakal pake default.")
 
-    # Tentukan convo yang mau di-render
     if auto_render_all or (selected_index is None and len(convo_list) > 1):
         if len(convo_list) > 1 and not auto_render_all:
             print_section(f"{len(convo_list)} Sesi dalam File", icon="folder")
@@ -512,11 +521,9 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
         except IndexError:
             continue
 
-        # Generate ID unik
         inserted_at = convo.get("inserted_at") or convo.get("created_at_ts")
         convo_id = _generate_convo_id(inserted_at, fallback_offset=pos - 1)
 
-        # Parse
         spinner = LoadingSpinner(f"[{pos}/{total}] Parsing '{convo['title']}'...")
         spinner.start()
         try:
@@ -527,7 +534,6 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
             continue
         spinner.stop(f"Parsed: '{chat_data.get('title')}' - {len(chat_data.get('messages', []))} pesan")
 
-        # === PR-40: Integrity check ===
         is_valid, errors, warnings = _validate_chat_data(
             chat_data, convo_label=chat_data.get("title") or convo.get("title", f"#{idx}")
         )
@@ -542,10 +548,8 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
             skipped_integrity.append(chat_data.get("title") or convo.get("title", f"#{idx}"))
             continue
 
-        # Output path: public/history/<id>/index.html
         output_path = os.path.join(PUBLIC_DIR, HISTORY_SUBDIR, convo_id, "index.html")
 
-        # Render
         spinner = LoadingSpinner("Inject HTML template...")
         spinner.start()
         try:
@@ -562,7 +566,6 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
             continue
         spinner.stop("Render selesai")
 
-        # === PR-40: Check attachment di HTML ===
         att_total, att_missing = _check_attachments_in_html(final_path)
         if att_total > 0 and att_missing > 0:
             print_warn(f"  {att_missing}/{att_total} attachment ilang (liat attachments/PENDING.md)")
@@ -575,7 +578,6 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
         })
         print()
 
-    # Summary
     print_section("Render Selesai", icon="check")
     if rendered:
         print_success(f"{len(rendered)} convo berhasil di-render")
@@ -592,7 +594,6 @@ def _do_render(file_path: str, selected_index: int = None, auto_render_all: bool
     for r in rendered:
         print_bullet(f"{r['title']}  ({r['messages']} pesan)  ->  {r['id']}", indent=6)
 
-    # Hint ke tutorial
     print()
     _print_post_render_hint()
 
@@ -700,7 +701,6 @@ def handle_tutorial():
     _line("Panduan ini bakal ngebantu lu buka hasil render di browser.")
     print()
 
-    # === CARA BUKA DI BROWSER ===
     _section("🌐 CARA BUKA DI BROWSER")
 
     print()
@@ -723,7 +723,6 @@ def handle_tutorial():
     _hint("💡 Tips: serve.py bakal nanya otomatis")
     _hint("   \"buka browser sekarang?\" - tinggal ketik Y.")
 
-    # === STRUKTUR OUTPUT ===
     _section("📂 STRUKTUR OUTPUT")
 
     print()
@@ -742,17 +741,16 @@ def handle_tutorial():
     _cmd("Landing: http://localhost:8000/", indent=6)
     _cmd("Viewer:  http://localhost:8000/history/1789718334/", indent=6)
 
-    # === KEYBOARD SHORTCUTS ===
     _section("⌨️  KEYBOARD SHORTCUTS (di viewer)")
 
     print()
+    _cmd("?          Buka panel keyboard shortcuts", indent=6)
     _cmd("/          Fokus ke search", indent=6)
     _cmd("j / k      Navigate pesan next / prev", indent=6)
     _cmd("Home       Scroll ke atas", indent=6)
     _cmd("End        Scroll ke bawah", indent=6)
-    _cmd("Esc        Tutup sidebar / right rail", indent=6)
+    _cmd("Esc        Tutup sidebar / right rail / modal", indent=6)
 
-    # === TROUBLESHOOTING ===
     _section("❓ TROUBLESHOOTING")
 
     print()
@@ -766,6 +764,10 @@ def handle_tutorial():
     print()
     _hint("Q: Convo gak muncul di landing?")
     _line("A: Jalanin sync: python3 sync.py", indent=4)
+    print()
+    _hint("Q: Token expired terus?")
+    _line("A: GhostWriter auto-invalidate token cache. Login ulang", indent=4)
+    _line("   pake token baru dari DevTools -> Local Storage.", indent=4)
 
     print()
     if t.enabled:
@@ -825,6 +827,52 @@ def _wait_enter():
         input("\n  [Enter] buat balik ke menu...")
 
 
+# ============================================================
+# FIX #3: WRAPPER — Try/Except per Handler
+# ============================================================
+
+def _safe_run(handler_fn, handler_name: str, **kwargs) -> bool:
+    """
+    FIX #3: Jalankan handler dengan try/except comprehensive.
+
+    Exception yang di-catch:
+        - AuthExpiredError: token expired
+        - KeyboardInterrupt: Ctrl+C
+        - Exception umum: apapun yang bikin crash
+
+    Return: bool (True kalo sukses, False kalo error)
+    """
+    try:
+        result = handler_fn(**kwargs)
+        return bool(result) if result is not None else True
+
+    except AuthExpiredError:
+        print()
+        print_error(f"{handler_name} gagal: token expired.")
+        invalidate_cached_token()
+        print_info("Token cache udah dihapus. Login ulang di menu [2].")
+        return False
+
+    except KeyboardInterrupt:
+        print()
+        print_warn(f"{handler_name} di-cancel (Ctrl+C).")
+        return False
+
+    except Exception as e:
+        print()
+        print_error(f"{handler_name} error: {type(e).__name__}: {e}")
+
+        # Kalo GW_DEBUG=1, tampilin full traceback
+        if os.environ.get("GW_DEBUG") == "1":
+            print()
+            print_warn("Debug mode: full traceback")
+            traceback.print_exc()
+
+        print()
+        print_info("Error udah di-handle. Balik ke menu utama.")
+        return False
+
+
 def run_wizard():
     print_banner()
     print_status(f"Wizard Mode GhostWriter - by {AUTHOR}", status="ghost")
@@ -841,13 +889,13 @@ def run_wizard():
             break
 
         if pilihan in ("", "1"):
-            handle_local_render()
+            _safe_run(handle_local_render, "Render lokal")
             _wait_enter()
         elif pilihan == "2":
-            handle_live_deepseek_backup()
+            _safe_run(handle_live_deepseek_backup, "Live Backup")
             _wait_enter()
         elif pilihan == "3":
-            handle_tutorial()
+            _safe_run(handle_tutorial, "Tutorial")
         else:
             print_warn("Pilihan gak valid.")
 

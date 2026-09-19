@@ -43,6 +43,17 @@ MAGIC_SIGNATURES = [
 ]
 
 
+# === CUSTOM EXCEPTIONS ===
+class AuthExpiredError(Exception):
+    """FIX #1: Token expired / invalid — dipake buat mbedain dari error biasa."""
+    pass
+
+
+class InvalidResponseError(Exception):
+    """FIX #2: Response dari API strukturnya gak valid."""
+    pass
+
+
 def _human_delay(label: str = ""):
     d = random.uniform(DELAY_MIN, DELAY_MAX)
     if label:
@@ -97,12 +108,70 @@ def _save_state(state: Dict[str, Any]):
         print_error(f"Gagal simpan state: {e}")
 
 
+def _extract_biz_data(payload: Any) -> Dict[str, Any]:
+    """
+    FIX #2: Extract biz_data dari response, dengan guard clause.
+
+    Handle:
+        - payload None (JSON "null")
+        - payload bukan dict
+        - payload dict tapi gak ada "data"
+        - payload dict tapi "data" bukan dict
+
+    Return: dict kosong kalo gagal.
+    """
+    if not isinstance(payload, dict):
+        return {}
+
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        return {}
+
+    biz = data.get("biz_data")
+    if isinstance(biz, dict):
+        return biz
+
+    # Fallback: kadang biz_data langsung ada di "data"
+    return data
+
+
+def _detect_auth_error(payload: Any) -> bool:
+    """
+    FIX #1: Detect apakah response nunjukin token expired / invalid.
+
+    Cek beberapa format:
+        - {"code": 401, "msg": "..."}
+        - {"code": 403, "msg": "..."}
+        - {"data": {"code": 401}}
+        - {"msg": "token expired"} / "invalid token" / "unauthorized"
+    """
+    if not isinstance(payload, dict):
+        return False
+
+    # Cek "code" di top-level
+    code = payload.get("code")
+    if code in (401, 403):
+        return True
+
+    # Cek "data.code"
+    data = payload.get("data")
+    if isinstance(data, dict):
+        inner_code = data.get("code")
+        if inner_code in (401, 403):
+            return True
+
+    # Cek "msg" / "message"
+    msg = str(payload.get("msg") or payload.get("message") or "").lower()
+    auth_keywords = ("token expired", "invalid token", "unauthorized", "token invalid", "auth failed")
+    if any(kw in msg for kw in auth_keywords):
+        return True
+
+    return False
+
+
 # === MESSAGE PROGRESS ===
 class MessageProgress:
-    """
-    Progress bar per-message. Update di baris yang sama pake \\r + \\033[K.
-    Output: '[██████░░░░░░░░░░] 50/166 pesan — Sesi 1/2'
-    """
+    """Progress bar per-message. Update di baris yang sama pake \\r + \\033[K."""
 
     def __init__(self, session_label: str = ""):
         self.total = 0
@@ -188,9 +257,10 @@ class DeepSeekLiveBackup:
         self.session.headers.update(self.headers)
         self.pending_attachments: List[Dict[str, Any]] = []
         self._processed_attachments = set()
-        # FIX PR-31: circuit breaker — kalo udah kena HTML challenge 1x,
-        # semua request attachment berikutnya pasti gagal juga.
+        # FIX PR-31: circuit breaker attachment
         self._attachment_download_disabled = False
+        # FIX #1: flag token expired (biar handler di main.py bisa baca)
+        self.token_expired = False
         os.makedirs(self.download_dir, exist_ok=True)
         self.state = _load_state()
 
@@ -212,9 +282,61 @@ class DeepSeekLiveBackup:
                     return None
         return None
 
+    def _safe_json(self, res: requests.Response) -> Any:
+        """
+        FIX #2: Parse JSON dengan aman. Return None kalo gagal.
+        """
+        if res is None:
+            return None
+        try:
+            return res.json()
+        except ValueError:
+            return None
+
+    def _check_auth_from_response(self, res: requests.Response) -> bool:
+        """
+        FIX #1: Cek apakah response nunjukin token expired.
+
+        Return True kalo token expired (dan set self.token_expired).
+        """
+        if res is None:
+            return False
+
+        # HTTP 401/403 = jelas auth issue
+        if res.status_code in (401, 403):
+            self.token_expired = True
+            return True
+
+        # Cek body JSON
+        payload = self._safe_json(res)
+        if _detect_auth_error(payload):
+            self.token_expired = True
+            return True
+
+        return False
+
     def test_connection(self) -> bool:
+        """Verify token. Return False kalo invalid / expired."""
         res = self._request("GET", f"{DEEPSEEK_API_BASE}/users/current", timeout=10)
-        return res is not None and res.status_code == 200
+        if res is None:
+            return False
+
+        # FIX #1: cek HTTP status dulu
+        if res.status_code != 200:
+            if res.status_code in (401, 403):
+                self.token_expired = True
+            return False
+
+        # FIX #1: cek body — kadang HTTP 200 tapi body-nya auth error
+        if self._check_auth_from_response(res):
+            return False
+
+        # Pastiin body-nya valid dict
+        payload = self._safe_json(res)
+        if not isinstance(payload, dict):
+            return False
+
+        return True
 
     def fetch_session_list(self, max_pages: int = 20) -> List[Dict[str, Any]]:
         all_sessions: List[Dict[str, Any]] = []
@@ -234,33 +356,46 @@ class DeepSeekLiveBackup:
                 spinner.update(f"Fetch page {page}... ({len(all_sessions)} sesi)")
 
                 res = self._request("GET", url, params=params)
+
+                # FIX #1: cek auth expired dulu
+                if self._check_auth_from_response(res):
+                    spinner.stop("Token expired — silakan login ulang", status="error")
+                    raise AuthExpiredError("Token expired saat fetch session list")
+
                 if res is None or res.status_code != 200:
                     status = res.status_code if res else "no-response"
                     spinner.stop(f"Gagal fetch page {page} (Status {status})", status="error")
                     break
 
-                try:
-                    data = res.json()
-                except ValueError:
-                    spinner.stop(f"Respons bukan JSON di page {page}", status="error")
+                # FIX #2: safe parse
+                data = self._safe_json(res)
+                if not isinstance(data, dict):
+                    spinner.stop(
+                        f"Response page {page} bukan dict (got {type(data).__name__})",
+                        status="error"
+                    )
                     break
 
-                biz = (
-                    data.get("data", {}).get("biz_data", {})
-                    or data.get("data", {})
-                    or {}
-                )
+                # FIX #2: extract biz pake helper yang aman
+                biz = _extract_biz_data(data)
                 sessions = (
                     biz.get("chat_sessions")
                     or biz.get("sessions")
                     or biz.get("items")
                     or []
                 )
+
+                # FIX #2: pastiin sessions list
+                if not isinstance(sessions, list):
+                    sessions = []
+
                 if not sessions:
                     break
 
                 new_count = 0
                 for s in sessions:
+                    if not isinstance(s, dict):
+                        continue
                     s_id = s.get("id")
                     if s_id and s_id not in seen_ids:
                         seen_ids.add(s_id)
@@ -280,7 +415,8 @@ class DeepSeekLiveBackup:
 
                 _human_delay(f"Pindah ke page {page + 1}")
         finally:
-            spinner.stop(f"Selesai — {len(all_sessions)} sesi diambil", status="ok")
+            if spinner.running:
+                spinner.stop(f"Selesai — {len(all_sessions)} sesi diambil", status="ok")
 
         return all_sessions
 
@@ -288,17 +424,20 @@ class DeepSeekLiveBackup:
         url = f"{DEEPSEEK_API_BASE}/chat/history_messages"
         params = {"chat_session_id": session_id}
         res = self._request("GET", url, params=params, timeout=25)
+
+        # FIX #1: cek auth expired
+        if self._check_auth_from_response(res):
+            raise AuthExpiredError("Token expired saat fetch session detail")
+
         if res is None or res.status_code != 200:
             return None
-        try:
-            data = res.json()
-        except ValueError:
+
+        # FIX #2: safe parse
+        data = self._safe_json(res)
+        if not isinstance(data, dict):
             return None
-        return (
-            data.get("data", {}).get("biz_data", {})
-            or data.get("data", {})
-            or {}
-        )
+
+        return _extract_biz_data(data)
 
     def _get_last_message_id(self, session_id: str) -> Optional[int]:
         return self.state.get("sessions", {}).get(session_id, {}).get("last_message_id")
@@ -364,29 +503,21 @@ class DeepSeekLiveBackup:
 
     def download_attachment(self, file_id, file_name, file_size=None, skip_if_local=False):
         save_path = os.path.join(self.download_dir, file_name)
-
         attachment_key = (file_id, file_name)
 
-        # === EARLY RETURNS (sebelum delay & network) ===
-
-        # 1. Udah pernah di-process di sesi ini
         if attachment_key in self._processed_attachments:
             return "skipped"
         self._processed_attachments.add(attachment_key)
 
-        # 2. File lokal udah ada & size cocok
         if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
             local_size = os.path.getsize(save_path)
             if not (file_size and local_size != file_size):
                 return "success"
 
-        # 3. Skip if local (dari caller)
         if skip_if_local:
             return "skipped"
 
-        # 4. FIX PR-31: circuit breaker aktif — kalo udah pernah kena
-        #    HTML challenge, semua request berikutnya PASTI gagal juga.
-        #    Skip delay + network sepenuhnya.
+        # FIX PR-31: circuit breaker
         if self._attachment_download_disabled:
             self.pending_attachments.append({
                 "file_name": file_name, "file_id": file_id,
@@ -394,7 +525,6 @@ class DeepSeekLiveBackup:
             })
             return "pending"
 
-        # 5. file_id kosong — udah pasti pending, gak perlu delay
         if not file_id:
             self.pending_attachments.append({
                 "file_name": file_name, "file_id": None,
@@ -402,7 +532,6 @@ class DeepSeekLiveBackup:
             })
             return "pending"
 
-        # === BARU DELAY — request beneran bakal dikirim ===
         _human_delay()
         url = f"{DEEPSEEK_API_BASE}/file/download"
         res = self._request("GET", url, params={"file_id": file_id}, timeout=30, allow_redirects=True)
@@ -417,15 +546,16 @@ class DeepSeekLiveBackup:
         ctype = res.headers.get("Content-Type", "").lower()
 
         if "application/json" in ctype:
-            try:
-                payload = res.json()
-                biz = payload.get("data", {}).get("biz_data", {}) or {}
+            payload = self._safe_json(res)
+            download_url = None
+            if isinstance(payload, dict):
+                biz = _extract_biz_data(payload)
                 download_url = (
                     biz.get("url") or biz.get("download_url")
-                    or payload.get("url") or payload.get("data", {}).get("url")
+                    or payload.get("url")
                 )
-            except ValueError:
-                download_url = None
+                if not download_url and isinstance(payload.get("data"), dict):
+                    download_url = payload["data"].get("url")
 
             if download_url:
                 res = self._request("GET", download_url, timeout=60, stream=True)
@@ -438,8 +568,6 @@ class DeepSeekLiveBackup:
                 ctype = res.headers.get("Content-Type", "").lower()
 
         if "text/html" in ctype:
-            # FIX PR-31: trip circuit breaker — set flag, semua request
-            # attachment berikutnya skip network + delay.
             self._attachment_download_disabled = True
             self.pending_attachments.append({
                 "file_name": file_name, "file_id": file_id,
@@ -518,12 +646,16 @@ class DeepSeekLiveBackup:
 
         spinner = LoadingSpinner(f"Fetching detail '{title}'...")
         spinner.start()
+        detail = None
         try:
             detail = self.fetch_session_detail(s_id)
+        except AuthExpiredError:
+            spinner.stop("Token expired", status="error")
+            raise
         finally:
             if detail:
                 spinner.stop(f"Detail '{title}' diambil", status="ok")
-            else:
+            elif not self.token_expired:
                 spinner.stop(f"Gagal ambil detail '{title}'", status="error")
 
         if not detail:
@@ -538,6 +670,10 @@ class DeepSeekLiveBackup:
             or detail.get("history_messages")
             or []
         )
+
+        if not isinstance(chat_messages, list):
+            chat_messages = []
+
         total_msgs = len(chat_messages)
         print_info(f"{total_msgs} node pesan mentah terdeteksi")
 
@@ -559,14 +695,12 @@ class DeepSeekLiveBackup:
             else:
                 print_info(f"Sesi '{title}' ada update ({prev_last_id} -> {last_message_id})")
 
-        # === PROGRESS PER-MESSAGE ===
         mp = MessageProgress(session_label)
         mp.set_total(total_msgs)
         seen_file_ids = set()
 
         mapping: Dict[str, Any] = {}
         prev_id: Optional[str] = None
-        processed_since_last_render = 0
 
         for idx, msg in enumerate(chat_messages):
             if not isinstance(msg, dict):
@@ -575,6 +709,8 @@ class DeepSeekLiveBackup:
 
             node_id = str(idx + 1)
             fragments = msg.get("fragments", []) or []
+            if not isinstance(fragments, list):
+                fragments = []
 
             for att in self._collect_attachments(msg, fragments):
                 att_key = (att["file_id"], att["file_name"])
@@ -613,7 +749,6 @@ class DeepSeekLiveBackup:
 
         mp.finish()
 
-        # Summary attachment
         if self.pending_attachments:
             pending_now = len(self.pending_attachments)
             print_warn(f"{pending_now} attachment pending manual")
