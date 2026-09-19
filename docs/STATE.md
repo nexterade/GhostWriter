@@ -2,7 +2,7 @@
                     GHOSTWRITER — PROJECT STATE & PROGRESS
 ================================================================================
 Project  : GhostWriter 👻📜 (AI Chat Dump to Web Interface Engine)
-Version  : v2.3.0-GW
+Version  : v2.5.0-GW
 Phase    : Phase 4 (Polish & Stabilization — IN PROGRESS)
 Updated  : 2026-09-19
 ================================================================================
@@ -24,30 +24,28 @@ production-ready:
       Local Storage untuk menarik seluruh riwayat chat + metadata dari
       akun DeepSeek pengguna.
 
+Update terbaru (2026-09-19 — v2.5.0):
+  ✓ Action D (Polish Backlog Lama) SELESAI — PR-30, PR-32, PR-33.
+  ✓ PR-30: Fix dedup edge case di dist_index.py.
+  ✓ PR-32: Backup versioning + retention policy (maks 5 versi).
+  ✓ PR-33: Prune stale folder di public/history/.
+  ✓ 3 file berubah: dist_index.py, main.py, sync.py.
+
+Update terbaru (2026-09-19 — v2.4.0):
+  ✓ User-Friendly CLI Redesign.
+  ✓ Menu pake nomor [N] biar match sama input.
+  ✓ Tutorial upgrade: Quick Start, grouping troubleshooting, Tips & Trik.
+  ✓ Konsistensi istilah: "sesi" → "obrolan", "attachment" → "lampiran".
+  ✓ Adaptive default di prompt pilih obrolan.
+  ✓ PENDING.md upgrade: emoji + markdown + footer.
+  ✓ Title pake quote `💬 "..."` biar jelas ini judul chat.
+
 Update terbaru (2026-09-19 — v2.3.0):
-  ✓ UI Refactor besar-besaran — search bar pindah ke bottom, stats pindah
-    ke bawah header, header jadi slim + dropdown menu.
-  ✓ 5 bug mobile viewport fixed:
-    - Address bar nutupin konten (dvh + safe-area)
-    - Floating nav nutupin search (body.searching)
-    - Keyboard nutupin search box (search bar bottom)
-    - Header hilang pas keyboard (sticky + visualViewport)
-    - Stats hidden di mobile (pindah ke header)
+  ✓ UI Refactor besar — search bar pindah ke bottom, stats pindah ke
+    bawah header, header jadi slim + dropdown menu.
+  ✓ 5 bug mobile viewport fixed (dvh + safe-area + search bar bottom).
   ✓ Action A (Data Safety) selesai — PR-39, PR-40, PR-40A.
   ✓ Action B (UX Quick Wins) selesai — PR-42, PR-43.
-  ✓ 3 file berubah: viewer.html, main.py, deepseek_backup.py.
-  ✓ Commit history bersih (commit 04a22a1).
-
-Update terbaru (2026-09-19 — v2.2.4):
-  ✓ Fix token expired handling graceful — AuthExpiredError.
-  ✓ `_request()` detect auth error (HTTP 401/403 + body code).
-  ✓ `main.py` wrap wizard handlers di `_safe_run()`.
-  ✓ Auto-invalidate token cache, balik ke menu (gak crash).
-
-Update terbaru (2026-09-19 — v2.2.3):
-  ✓ BACKLOG.md direstrukturisasi jadi Action Fixed (A-I).
-  ✓ 10 PR baru ditambahkan ke backlog.
-  ✓ Kategorisasi final: Action A-I.
 
 Update sebelumnya (2026-09-18 — Phase 3 COMPLETE):
   ✓ Multi-format parser: JSON (3 skema), Markdown, DOCX
@@ -73,14 +71,14 @@ GhostWriter/
 ├── main.py                      CLI Wizard (lokal & live fetcher)
 ├── exporter.py                  HTML compiler + auto-index trigger + auto-backup
 ├── serve.py                     Local HTTP server (auto-detect Termux)
-├── sync.py                      Index regenerator (manual trigger)
+├── sync.py                      Index regenerator + prune stale
 ├── requirements.txt             Dependencies
 │
 ├── attachments/                 Penyimpanan fisik attachment
 │   └── PENDING.md               [Auto] Manifest manual download
 │
-├── backups/                     Dump JSON hasil live fetcher
-│   └── backup_*.json            [Auto] Output backup (BUKAN di root)
+├── backups/                     Dump JSON hasil live fetcher (versioned)
+│   └── backup_*_YYYYMMDD_HHMMSS.json  [Auto] Maks 5 versi terakhir
 │
 ├── public/                      Output HTML + index (di-serve via serve.py)
 │   ├── index.html               [Auto] Landing page (date group + search)
@@ -112,7 +110,7 @@ GhostWriter/
 │   ├── theme.py                 Midnight color theme (single source)
 │   ├── loading.py               Spinner, status, progress bar
 │   ├── checklist.py             Interactive checklist (Termux-friendly)
-│   ├── dist_index.py            Index generator (JSON + HTML)
+│   ├── dist_index.py            Index generator (JSON + HTML) + 2-pass dedup
 │   ├── download_vendor.py       Vendor assets downloader
 │   └── deepseek_backup.py       Live fetcher + state manager
 │
@@ -162,10 +160,11 @@ Fitur:
   ✓ PR-31: Circuit breaker untuk attachment pending
   ✓ PR-40A: Graceful token expired handling
     - `AuthExpiredError` exception custom
-    - `_request()` detect auth error (HTTP 401/403 + body code 401/403)
+    - `_request()` detect auth error
     - `_safe_json()` parse JSON dengan aman
     - `_extract_biz_data()` handle response None / invalid
     - `_detect_auth_error()` detect "token expired" / "invalid token"
+  ✓ PR-42G: Konsistensi istilah — "sesi" → "obrolan", "attachment" → "lampiran"
 
 Anti-Suspend Strategy:
   ✓ Human-like delay + jitter (default 1-3s antar request)
@@ -223,9 +222,9 @@ Components:
 3.5 HTML Viewer (templates/viewer.html) — v2.3.0 REFACTORED
 ────────────────────────────────────────────────────────────────────────────────
 
-Layout Baru (mirip DeepSeek/ChatGPT mobile):
+Layout:
   ┌─────────────────────────────────────────┐
-  │  HEADER (slim)                          │
+  │  HEADER (slim, sticky)                  │
   │  [☰] Title              [?] [🌙] [⋮]    │
   ├─────────────────────────────────────────┤
   │  STATS BAR (sticky)                     │
@@ -257,16 +256,11 @@ Features:
   ✓ Stats bar (pesan, char, token est., durasi)
   ✓ Print stylesheet
   ✓ Keyboard shortcuts: /, ?, j, k, Home, End, Esc
-  ✓ Floating scroll nav (pindah ke atas search bar)
+  ✓ Floating scroll nav
   ✓ Pretty URL: /history/<convo_id>/
   ✓ Help modal (? shortcut) — PR-42
   ✓ Message menu (⋯ dropdown) — PR-43
-    - Copy as Markdown
-    - Save as .md
-    - Copy Permalink
   ✓ Header dropdown (⋮) — v2.3.0
-    - Print / Save as PDF
-    - Toggle Right Rail
 
 Mobile Fixes (v2.3.0):
   ✓ PR-42A: dvh + safe-area (address bar overlap)
@@ -280,7 +274,7 @@ Responsive:
   ✓ Desktop: dua-duanya visible
 
 
-3.6 Landing Page (public/index.html)
+3.6 Landing Page (public/index.html) — v2.5.0 IMPROVED
 ────────────────────────────────────────────────────────────────────────────────
 
 Auto-generated oleh tools/dist_index.py:
@@ -290,7 +284,10 @@ Features:
   ✓ Search real-time (filter by title + timestamp)
   ✓ Sort: Terbaru, Judul (A-Z), Pesan Terbanyak, Ukuran Terbesar
   ✓ Group by date: Hari Ini, Kemarin, 7 Hari Terakhir, 30 Hari Terakhir, Lebih Lama
-  ✓ Dedup by title (keep terbaru)
+  ✓ PR-30: 2-pass dedup (normal + aggressive fallback)
+    - "Chat (1)" & "Chat (2)" dianggap BEDA (bukan duplikat)
+    - Keep highest mtime kalo ada duplikat
+  ✓ PR-30: Sort stabil by ID numeric + mtime (`_convo_sort_key()`)
   ✓ Theme toggle (sync dengan viewer via localStorage)
   ✓ Stats: visible vs total count
   ✓ Keyboard shortcut: / fokus search
@@ -309,30 +306,45 @@ Features:
   ✓ Port conflict handling
 
 
-3.8 Index Sync (sync.py)
+3.8 Index Sync + Prune (sync.py) — v2.5.0 UPGRADED
 ────────────────────────────────────────────────────────────────────────────────
 
-Trigger manual untuk regenerate index.json + index.html.
-Usage: python3 sync.py
+Usage:
+  python3 sync.py                        # Sync biasa
+  python3 sync.py --clean                # Sync + prune (dengan konfirmasi)
+  python3 sync.py --clean --dry-run      # Preview folder yang bakal dihapus
+  python3 sync.py --clean --yes          # Prune tanpa konfirmasi
+  python3 sync.py --clean --keep ID1,ID2 # Manual: keep ID1 & ID2 aja
+
+Fitur:
+  ✓ PR-33: Auto-detect valid convo IDs dari backups/*.json
+  ✓ PR-33: Manual mode --keep (kalo gak ada backup)
+  ✓ PR-33: Dry-run preview (list folder + size)
+  ✓ PR-33: Konfirmasi sebelum hapus (safety net)
+  ✓ PR-33: Report freed bytes
+  ✓ Regenerate index.json + index.html
+
+Safety Nets:
+  ✓ Dry-run dulu
+  ✓ Konfirmasi (default)
+  ✓ Backup dulu (recommended): tar -czf public-backup.tar.gz public/
 
 
 3.9 Action Fixed Framework (v2.2.3)
 ────────────────────────────────────────────────────────────────────────────────
 
-9 Action Fixed:
-  Action A (Data Safety)        : PR-39, PR-40, PR-40A ✅ DONE
-  Action B (UX Quick Wins)      : PR-42, PR-43 ✅ DONE
-  UI Refactor (Mobile)          : PR-42A, 42B, 42C, 42D ✅ DONE
-  Action C (Index Safety Scale) : PR-41, PR-46, PR-48 ⏳ Pending
-  Action D (Polish Backlog)     : PR-30, PR-32, PR-33 ⏳ NEXT
-  Action E (Perf & Onboarding)  : PR-44, PR-45 ⏳ Pending
-  Action F (PDF Export)         : PR-36 🕐 Deferred
-  Action G (CLI Convenience)    : PR-47 ⏳ Pending
-  Action H (Termux Integration) : PR-34 ⏳ Pending
-  Action I (Advanced Features)  : PR-37, PR-38 📋 Backlog
-
-Urutan prioritas (rekomendasi):
-  A → B → D → C → E → F → G → H → I
+11 Action Fixed:
+  Action A (Data Safety)          : PR-39, PR-40, PR-40A ✅ DONE
+  Action B (UX Quick Wins)        : PR-42, PR-43 ✅ DONE
+  UI Refactor (Mobile)            : PR-42A, 42B, 42C, 42D ✅ DONE
+  CLI Redesign (User-Friendly)    : PR-42E, 42F, 42G ✅ DONE
+  Action D (Polish Backlog)       : PR-30, PR-32, PR-33 ✅ DONE
+  Action C (Index Safety Scale)   : PR-41, PR-46, PR-48 ⏳ NEXT
+  Action E (Perf & Onboarding)    : PR-44, PR-45 ⏳ Pending
+  Action F (PDF Export)           : PR-36 🕐 Deferred
+  Action G (CLI Convenience)      : PR-47 ⏳ Pending
+  Action H (Termux Integration)   : PR-34 ⏳ Pending
+  Action I (Advanced Features)    : PR-37, PR-38 📋 Backlog
 
 
 ================================================================================
@@ -349,29 +361,20 @@ Urutan prioritas (rekomendasi):
       → API strip metadata untuk security.
       → Fallback ke local file resolution
 
-  [3] Dedup nama convo di index.html (PARTIAL FIX)
-      → _normalize_title() strip timestamp suffix + angka kurung.
-      → RISIKO: "Chat (1)" dan "Chat (2)" bisa dianggap duplikat.
-      → Solusi planned: PR-30 (Action D).
-
-  [4] CDN fallback kalo vendor/ kosong
+  [3] CDN fallback kalo vendor/ kosong
       → Fallback ke CDN kalo vendor gak ada
 
-  [5] Termux raw input gak works di on-screen keyboard
+  [4] Termux raw input gak works di on-screen keyboard
       → Checklist interaktif fallback ke mode angka
       → Solusi planned: PR-34 (Action H)
 
-  [6] Backup output dedup
-      → Setiap backup nulis backup_bulk.json (overwrite).
-      → Solusi planned: PR-32 (Action D)
-
-  [7] Stale folder di public/history/
-      → Kalo source backup dihapus, folder di public/history/ tetep ada.
-      → Solusi planned: PR-33 (Action D)
-
-  [8] Scale issue di landing page
+  [5] Scale issue di landing page
       → Kalo 500+ convo, semua card di-render sekaligus (lag).
       → Solusi planned: PR-46 (Action C)
+
+  [6] Gak ada checksum / integrity verification di index
+      → Kalo ada HTML rusak, gak ke-detect.
+      → Solusi planned: PR-41 (Action C)
 
 
 ================================================================================
@@ -397,8 +400,9 @@ Urutan prioritas (rekomendasi):
   │ Phase 4  │ Action A (Data Safety)             │ ✅ Done      │
   │ Phase 4  │ Action B (UX Quick Wins)           │ ✅ Done      │
   │ Phase 4  │ UI Refactor Mobile (PR-42A-D)      │ ✅ Done      │
-  │ Phase 4  │ Action D (Polish Backlog)          │ ⏳ Next      │
-  │ Phase 4  │ Action C (Index Safety & Scale)    │ ⏳ Pending   │
+  │ Phase 4  │ User-Friendly CLI Redesign         │ ✅ Done      │
+  │ Phase 4  │ Action D (Polish Backlog)          │ ✅ Done      │
+  │ Phase 4  │ Action C (Index Safety & Scale)    │ ⏳ Next      │
   │ Phase 5  │ Action E (Perf & Onboarding)       │ ⏳ Pending   │
   │ Phase 5  │ Action F (PDF Export)              │ 🕐 Deferred  │
   │ Phase 5  │ Action G (CLI Convenience)         │ ⏳ Pending   │
@@ -411,34 +415,31 @@ Urutan prioritas (rekomendasi):
 6. NEXT STEPS
 ================================================================================
 
-Priority 1 — Action D: Polish Backlog Lama (2-3 jam)
-  • PR-30: Fix Dedup Edge Case
-  • PR-32: Backup Versioning
-  • PR-33: Prune Stale public/history/
-  • Files: tools/dist_index.py, main.py, sync.py
-
-Priority 2 — Action C: Index Safety & Scale (4-5 jam)
+Priority 1 — Action C: Index Safety & Scale (4-5 jam)
   • PR-41: Checksum / Manifest di Index.json
-  • PR-46: Pagination / Infinite Scroll
-  • PR-48: Auto-Detect Broken Links
+  • PR-46: Pagination / Infinite Scroll di Landing Page
+  • PR-48: Auto-Detect Broken Links di Index
   • Files: tools/dist_index.py, sync.py
 
-Priority 3 — Action E: Perf & Onboarding (3 jam)
+Priority 2 — Action E: Perf & Onboarding (3 jam)
   • PR-44: Onboarding Tour Pertama Kali
   • PR-45: Lazy Load Attachment Images
   • Files: templates/viewer.html, tools/dist_index.py, parsers/json_parser.py
 
+Priority 3 — Action G: CLI Convenience (30 menit)
+  • PR-47: CLI Flag --stats
+  • Files: main.py
+
 Priority 4 — Action F: PDF Export (2-4 jam, DEFERRED)
   • PR-36: Export Individual Convo to PDF
   • Note: Tombol PDF udah ada di dropdown ⋮ (via window.print())
+  • Files: templates/viewer.html, main.py
 
-Priority 5 — Action G: CLI Convenience (30 menit)
-  • PR-47: CLI Flag --stats
-
-Priority 6 — Action H: Termux Integration (1-2 jam)
+Priority 5 — Action H: Termux Integration (1-2 jam)
   • PR-34: Termux API Integration
+  • Files: tools/checklist.py, main.py
 
-Priority 7 — Action I: Advanced Features (10-14 jam, BACKLOG)
+Priority 6 — Action I: Advanced Features (10-14 jam, BACKLOG)
   • PR-37: Category/Tag untuk Convo
   • PR-38: Diff View
 
@@ -557,6 +558,51 @@ Efek:
   • Viewer align sama pattern 2024.
 
 
+7.7 Backup Versioning + Retention (v2.5.0)
+────────────────────────────────────────────────────────────────────────────────
+
+Konteks:
+  Sebelumnya, tiap live backup overwrite backup_bulk.json — kalo backup
+  baru rusak, versi lama ilang.
+
+Solusi (PR-32):
+  • Backup filename dengan timestamp: backup_<slug>_YYYYMMDD_HHMMSS.json
+  • Retention policy: simpen maks 5 versi terakhir
+  • Helper: _generate_backup_name() + _prune_old_backups()
+
+Efek:
+  • Kalo backup baru rusak, versi lama masih ada (maks 5).
+  • Disk space terkontrol (gak numpuk selamanya).
+
+Referensi:
+  Pattern ini mirip Apple Time Machine (hourly, daily, weekly retention).
+
+
+7.8 Prune Stale Folder (v2.5.0)
+────────────────────────────────────────────────────────────────────────────────
+
+Konteks:
+  Kalo source backup dihapus, folder di public/history/ tetep ada.
+  Landing page masih nampilin convo "hantu".
+
+Solusi (PR-33):
+  • Flag --clean di sync.py
+  • Auto-detect valid IDs dari backups/*.json
+  • Dry-run mode + konfirmasi (safety net)
+
+Efek:
+  • Folder stale ke-hapus, index bersih.
+  • Disk space freed.
+
+Safety Nets:
+  • Dry-run dulu
+  • Konfirmasi (default)
+  • Manual mode: --keep ID1,ID2
+
+Referensi:
+  Pattern ini mirip git gc (2-week grace period) & docker system prune.
+
+
 ================================================================================
-                     END OF STATE — GHOSTWRITER v2.3.0-GW
+                     END OF STATE — GHOSTWRITER v2.5.0-GW
 ================================================================================

@@ -80,54 +80,51 @@
 
 ### Batch 3.8: Action A — Data Safety (v2.2.3)
 - [x] **PR-39: Auto-Backup Sebelum Overwrite**
-  - `_backup_existing_file()` + `_prune_old_backups()` di `exporter.py`.
-  - Simpen maksimal 3 versi backup per convo (`index-YYYYMMDD-HHMMSS.html.bak`).
 - [x] **PR-40: Integrity Check Sebelum Render**
-  - `_validate_chat_data()` di `main.py`.
-  - Cek: title, messages list, >0 pesan, role valid, content valid.
-  - Abort kalo >50% pesan kosong (indikasi parse gagal).
 - [x] **PR-40A: Graceful Token Expired Handling**
-  - `AuthExpiredError` exception di `deepseek_backup.py`.
-  - `_request()` detect auth error (HTTP 401/403 atau body code 401/403).
-  - `fetch_session_list()`, `fetch_session_detail()` guard clause.
-  - `main.py` wrap wizard handlers di `_safe_run()`.
-  - Auto-invalidate token cache, balik ke menu (gak crash).
 
 ### Batch 3.9: Action B — UX Quick Wins (v2.3.0)
 - [x] **PR-42: Keyboard Shortcut Overlay / Help Panel**
-  - Tombol `?` di header + shortcut `?` buat buka modal.
-  - Modal berisi 4 section: Navigasi, Search, Scroll, Pesan.
-  - Esc buat close, klik backdrop juga.
 - [x] **PR-43: Export Single Message**
-  - Dropdown menu per message (⋯) dengan 3 opsi:
-    - 📋 Copy as Markdown
-    - 💾 Save as .md (download file)
-    - 🔗 Copy Permalink (link ke `#msg-N`)
-  - Toast notification feedback.
 
 ### Batch 3.10: UI Refactor Mobile-Friendly (v2.3.0)
 - [x] **PR-42A: Mobile Viewport Fix (dvh + safe-area)**
-  - Ganti `100vh` → `100dvh` di body/main-area/sidebar/rail.
-  - Tambah `env(safe-area-inset-bottom)` di chat-container, floating-nav, stats-bar.
-  - Fix address bar overlap di mobile.
 - [x] **PR-42B: Floating Nav Sembunyi Pas Search Aktif**
-  - `body.searching` class trigger hide floating nav.
-  - Esc priority: modal > search > sidebar/rail.
-  - Search box accent tetep muncul walau gak fokus.
 - [x] **PR-42C: Keyboard Mobile Viewport Fix**
-  - VisualViewport API detect keyboard + set `--vv-height` variable.
-  - `body.keyboard-active` class buat CSS hook.
-  - Sticky header biar gak ke-scroll keluar.
-  - `scroll-padding` di chat-container biar auto-scroll aman.
 - [x] **PR-42D: UI Refactor — Search Bar Bottom + Stats Header**
-  - Search box pindah dari header ke bottom (mirip DeepSeek/ChatGPT mobile).
-  - Stats footer pindah ke bawah header, sticky, gak hidden di mobile.
-  - Header slim: title + `?` + `🌙` + `⋮` (dropdown).
-  - Dropdown `⋮` berisi Print + Right Rail toggle.
-  - Search nav buttons (Prev/Next) buat mobile (gak ada Enter key).
-  - Clear button `✕` + counter badge `[N]` di search bar.
-  - Floating nav (▲▼) pindah ke atas search bar.
-  - Fix bug fundamental keyboard mobile (search gak ketutup lagi).
+
+### Batch 3.11: User-Friendly CLI Redesign (v2.4.0)
+- [x] **PR-42E: Menu Redesign — Soft & Friendly + Nomor [N]**
+  - Ganti box border → bullet ▸ + garis horizontal + nomor [N].
+  - Footer context: file backup count, size, convo count, jam.
+  - Default action = 0 (keluar) — safe default.
+- [x] **PR-42F: Tutorial Upgrade**
+  - Quick Start section (BARU).
+  - Troubleshooting di-group jadi 2 kategori.
+  - Tips & Trik section (BARU).
+  - Footer navigasi.
+- [x] **PR-42G: Konsistensi Istilah**
+  - "sesi" → "obrolan", "attachment" → "lampiran".
+  - Title pake quote `💬 "..."`.
+  - Warning dengan context (pesan kosong = lampiran gambar).
+  - PENDING.md upgrade: emoji + markdown + footer.
+
+### Batch 4: Action D — Polish Backlog Lama (v2.5.0)
+- [x] **PR-30: Fix Dedup Edge Case**
+  - `_normalize_title()` gak strip angka kurung lagi.
+  - 2-pass dedup: normal dulu (keep "Chat (1)" & "Chat (2)" sebagai beda),
+    aggressive fallback kalo > MAX_INDEX_ITEMS.
+  - Keep highest mtime kalo ada duplikat.
+  - Helper `_convo_sort_key()` untuk sort stabil by ID numeric + mtime.
+- [x] **PR-32: Backup Versioning**
+  - Timestamp suffix `backup_<slug>_YYYYMMDD_HHMMSS.json`.
+  - Retention policy: maks 5 versi terakhir.
+  - Helper `_generate_backup_name()` + `_prune_old_backups()` di `main.py`.
+- [x] **PR-33: Prune Stale public/history/**
+  - Flag `--clean` + `--dry-run` + `--yes` di `sync.py`.
+  - Auto-detect valid IDs dari `backups/*.json`.
+  - Manual mode: `--keep ID1,ID2` (kalo gak ada backup).
+  - Safety nets: dry-run + konfirmasi + report freed size.
 
 ---
 
@@ -135,27 +132,26 @@
 
 ---
 
-### 🎯 ACTION D — Polish Backlog Lama
-**Files**: `tools/dist_index.py`, `main.py`, `sync.py`
-**Effort**: ~2-3 jam
-**Priority**: MEDIUM
-
-- [ ] **PR-30: Fix Dedup Edge Case**
-  - `_normalize_title()` salah strip "Chat (1)" vs "Chat (2)".
-  - Solusi: dedup by ID prefix, keep highest mtime.
-- [ ] **PR-32: Backup Versioning**
-  - Opsi: `backup_bulk_YYYYMMDD_HHMMSS.json` (timestamp suffix).
-- [ ] **PR-33: Prune Stale `public/history/`**
-  - Flag `--clean` di `sync.py` dengan dry-run mode & konfirmasi.
-
 ### 🎯 ACTION C — Index Safety & Scale
 **Files**: `tools/dist_index.py`, `sync.py`
 **Effort**: ~4-5 jam
 **Priority**: HIGH
 
 - [ ] **PR-41: Checksum / Manifest di Index.json**
+  - Taro checksum (MD5/SHA256) tiap HTML di `index.json`.
+  - Landing page verify (opsional, async). Kalo mismatch, badge "⚠️ stale".
+  - File: `tools/dist_index.py`.
+
 - [ ] **PR-46: Pagination / Infinite Scroll di Landing Page**
+  - Pagination 25/50/100 per page atau infinite scroll (load 20 pertama).
+  - File: `tools/dist_index.py` + landing page JS.
+
 - [ ] **PR-48: Auto-Detect Broken Links di Index**
+  - `sync.py` flag `--verify` buat cek semua link di `index.json` apakah
+    file-nya ada. Output list broken, opsi auto-fix (hapus dari index).
+  - File: `sync.py` + `tools/dist_index.py`.
+
+---
 
 ### 🎯 ACTION E — Perf & Onboarding
 **Files**: `templates/viewer.html`, `tools/dist_index.py`, `parsers/json_parser.py`
@@ -163,7 +159,16 @@
 **Priority**: MEDIUM
 
 - [ ] **PR-44: Onboarding Tour Pertama Kali**
+  - Kalo `public/history/` kosong (first time), landing page nampilin
+    step-by-step guide (render, serve, buka browser) + CTA button.
+  - File: `tools/dist_index.py` (empty state).
+
 - [ ] **PR-45: Lazy Load Attachment Images**
+  - Ganti Base64 inline jadi lazy-loaded `<img data-src>`.
+  - Load via `IntersectionObserver` pas masuk viewport.
+  - File: `parsers/json_parser.py` + `templates/viewer.html`.
+
+---
 
 ### 🎯 ACTION F — PDF Export
 **Files**: `templates/viewer.html`, `main.py`
@@ -172,8 +177,10 @@
 **Status**: DEFERRED
 
 - [ ] **PR-36: Export Individual Convo to PDF**
-  - Note: Dengan UI baru, tombol PDF udah ada di dropdown `⋮` (via `window.print()`).
-  - Yang kurang: print CSS tweak khusus + cleanup.
+  - Note: Dengan UI baru v2.3.0, tombol PDF udah ada di dropdown `⋮`
+    (via `window.print()`). Yang kurang: print CSS tweak khusus + cleanup.
+
+---
 
 ### 🎯 ACTION G — CLI Convenience
 **Files**: `main.py`
@@ -181,6 +188,11 @@
 **Priority**: LOW
 
 - [ ] **PR-47: CLI Flag `--stats`**
+  - `python3 main.py --stats` print ringkasan project.
+  - Total convo, total message, total size, latest render, top 3 convo.
+  - File: `main.py`.
+
+---
 
 ### 🎯 ACTION H — Termux Integration
 **Files**: `tools/checklist.py`, `main.py`
@@ -188,15 +200,26 @@
 **Priority**: MEDIUM
 
 - [ ] **PR-34: Termux API Integration**
+  - Checklist pake `termux-dialog` native Android (radio, text, confirm).
+  - File: `tools/checklist.py` + `main.py`.
+
+---
 
 ### 🎯 ACTION I — Advanced Features
 **Files**: `templates/viewer.html`, `tools/dist_index.py`
 **Effort**: ~10-14 jam
 **Priority**: LOW
-**Status**: BACKLOG
+**Status**: BACKLOG (butuh design dulu)
 
 - [ ] **PR-37: Category/Tag untuk Convo**
+  - Edit metadata manual via UI, filter di index.
+  - Butuh persistensi (di mana simpen tag?).
+  - File: `templates/viewer.html` + `tools/dist_index.py`.
+
 - [ ] **PR-38: Diff View**
+  - Bandingin 2 versi convo (kalo ada update).
+  - Butuh library diff + UI side-by-side.
+  - File: `templates/viewer.html`.
 
 ---
 
@@ -207,8 +230,9 @@
 | A | Data Safety | exporter.py, main.py, deepseek_backup.py | 1.5j | HIGH | ✅ Done |
 | B | UX Quick Wins | viewer.html | 2.5j | HIGH | ✅ Done |
 | UI | Mobile Refactor | viewer.html | 3j | HIGH | ✅ Done |
-| C | Index Safety & Scale | dist_index.py, sync.py | 4-5j | HIGH | ⏳ Pending |
-| D | Polish Backlog Lama | dist_index.py, main.py, sync.py | 2-3j | MEDIUM | ⏳ **Next** |
+| CLI | User-Friendly Redesign | main.py, deepseek_backup.py | 2j | HIGH | ✅ Done |
+| D | Polish Backlog Lama | dist_index.py, main.py, sync.py | 2-3j | MEDIUM | ✅ Done |
+| C | Index Safety & Scale | dist_index.py, sync.py | 4-5j | HIGH | ⏳ **Next** |
 | E | Perf & Onboarding | viewer.html, dist_index.py, json_parser.py | 3j | MEDIUM | ⏳ Pending |
 | F | PDF Export | viewer.html, main.py | 2-4j | MEDIUM | 🕐 Deferred |
 | G | CLI Convenience | main.py | 30m | LOW | ⏳ Pending |
@@ -222,19 +246,19 @@
 **Phase 1**: Local JSON Converter [✓✓✓✓✓] DONE
 **Phase 2**: Live Backup + Parser Polish [✓✓✓✓✓] DONE
 **Phase 3**: Format Expansion + UI [✓✓✓✓✓] DONE
-**Phase 4**: Polish & Stabilization [✓✓✓  ] IN PROGRESS
+**Phase 4**: Polish & Stabilization [✓✓✓✓ ] IN PROGRESS
 **Phase 5**: Advanced Features [      ] PENDING
 
 ---
 
 ## 🎯 Prioritas Berikutnya
 
-1. **Action D** — Polish Backlog Lama (PR-30, PR-32, PR-33)
-2. **Action C** — Index Safety & Scale (PR-41, PR-46, PR-48)
-3. **Action E** — Perf & Onboarding
+1. **Action C** — Index Safety & Scale (PR-41, PR-46, PR-48)
+2. **Action E** — Perf & Onboarding
+3. **Action G** — CLI Convenience (quick win 30 menit)
 
 ---
 
 **Last Updated:** 2026-09-19
 **Maintainer:** GhostWriter Dev Team (Multi-AI Collaboration)
-**Current Version:** v2.3.0-GW
+**Current Version:** v2.5.0-GW
