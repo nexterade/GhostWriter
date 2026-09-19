@@ -35,6 +35,10 @@ Update terbaru (2026-09-19 — v2.2):
   ✓ BUGFIX #5: Backup output ke backups/ (bukan root)
   ✓ BUGFIX #6: Hapus convo_count dependency di viewer.html
     → andelin index.json sebagai single source of truth
+    Update terbaru (2026-09-19 — v2.2.1-GW):
+  ✓ Aturan baru "Multi-Batch File Delivery" ditambahkan ke CHECKPOINT 3.10.
+    Detail alur konfirmasi per file ada di sana.
+  ✓ Release v2.2-GW live di GitHub (nexterade/GhostWriter).
 
 Update sebelumnya (2026-09-18 — Phase 3 COMPLETE):
   ✓ Multi-format parser: JSON (3 skema), Markdown, DOCX

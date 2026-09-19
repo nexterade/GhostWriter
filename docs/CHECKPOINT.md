@@ -262,6 +262,61 @@ BATASAN GUE:
     kirim ke chat. Ini nyelametin lu dari bug render yang bikin
     tombol Copy muncul nyempil di tengah.
 
+3.10 PENGIRIMAN FILE MULTI-BATCH (STRICT!)
+────────────────────────────────────────────────────────────────────────────────
+
+  ATURAN:
+    Kalo AI mau ngirim file patched/fixed yang jumlahnya lebih dari 1
+    (misal 3 file, 5 file, dst), AI WAJIB ngirim SATU-SATU, bukan sekaligus.
+
+  ALUR WAJIB:
+
+    Step 1 — AI ngirim file pertama dengan header jelas:
+        [File 1/3] — nama_file.py
+        [Tujuan] — kenapa file ini diubah
+        [Patch] — isi file / diff
+
+    Step 2 — AI STOP, gak lanjut kirim file ke-2.
+        AI nanya konfirmasi:
+        "File 1/3 udah disimpan? Kalo udah, ketik 'gas' buat lanjut file 2/3."
+
+    Step 3 — User konfirmasi ("gas", "ok", "lanjut", atau sejenisnya).
+        Kalo user bilang "belum", "tunggu", atau nanya — AI jawab dulu,
+        baru nanya konfirmasi ulang.
+
+    Step 4 — AI kirim file ke-2 dengan header [File 2/3], ulangi Step 2-3.
+
+    Step 5 — Terusin sampe file terakhir, baru boleh ngasih summary/next step.
+
+  ALASAN TEKNIS:
+    • Chat interface (DeepSeek, ChatGPT, dll) sering scroll-ke-bawah
+      otomatis kalo output panjang. User bisa kelewatan file di tengah.
+    • Kalo ada bug di file ke-3, user udah keburu save file 1-2, jadi
+      ribet balikin.
+    • User perlu test per file biar tau mana yang salah kalo ada error.
+    • Konfirmasi per file = checkpoint natural, gak ada file yang skip.
+
+  YANG DILARANG:
+    • Ngirim 3+ file sekaligus dalam 1 response tanpa jeda konfirmasi.
+    • Ngirim file ke-2 sebelum user konfirmasi file ke-1 disimpan.
+    • Skip header [File X/Y] — user harus tau ini file ke berapa dari berapa.
+    • Lanjut ke file berikutnya cuma karena user jawab "ok" ambigu —
+      pastiin user beneran bilang "udah disimpan" atau "gas lanjut".
+
+  PENGECUALIAN:
+    • Kalo cuma 1 file, gak perlu konfirmasi — langsung kirim aja.
+    • Kalo user eksplisit bilang "kirim semua sekaligus" atau "gas semua",
+      AI boleh kirim semua, TAPI tetep kasih header [File X/Y] per file,
+      dan tetep saranin test per file.
+    • Kalo file-nya saling bergantung (misal file A import file B), AI
+      boleh kirim berurutan tanpa konfirmasi per file, TAPI harus
+      dikasih catatan "file ini butuh file sebelumnya".
+
+  FORMAT HEADER STANDAR:
+    [File 1/3] — tools/deepseek_backup.py
+    [Tujuan] — skip delay kalo attachment pasti pending
+    [Isi] — (file atau diff di bawah)
+    
 ================================================================================
 4. ALUR UPDATE & PENGGUNAAN
 ================================================================================

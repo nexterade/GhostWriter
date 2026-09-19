@@ -117,6 +117,12 @@
   - Section: Hari Ini, Kemarin, 7 Hari Terakhir, 30 Hari Terakhir, Lebih Lama.
 - [x] **PR-29: Dedup by Title di Index**
   - `_normalize_title()` strip timestamp suffix + angka kurung.
+  
+### Batch 3.6: Documentation Rule Update (v2.2.1)
+- [x] **PR-30A: Multi-Batch File Delivery Rule**
+  - CHECKPOINT.md section 3.10 baru: AI wajib kirim file multi-batch
+    satu-satu dengan konfirmasi per file.
+  - Alasan: cegah user skip file, salah timpa, atau gak test per file.
 
 ---
 
