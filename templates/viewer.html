@@ -70,8 +70,10 @@
       color: var(--text-main);
       display: flex;
       height: 100vh;
+      height: 100dvh;
       overflow: hidden;
       transition: background 0.3s ease, color 0.3s ease;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     /* === BRAND === */
@@ -324,6 +326,7 @@
       min-height: 0;
       overflow: hidden;
       height: 100vh;
+      height: 100dvh;
     }
 
     header {
@@ -338,6 +341,10 @@
       flex-shrink: 0;
       z-index: 20;
       transition: box-shadow 0.2s ease;
+
+      /* FIX: Sticky biar gak ke-scroll keluar pas keyboard aktif */
+      position: sticky;
+      top: 0;
     }
 
     header.scrolled { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
@@ -410,6 +417,19 @@
       box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
+    /* FIX: Pas lagi searching, kasih ring accent yang lebih tebal
+       biar user fokus ke search box */
+    body.searching .search-input {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    body.searching .search-count {
+      background: var(--accent-glow);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
     .search-input::placeholder { color: var(--text-muted); }
 
     .search-count {
@@ -463,6 +483,7 @@
       flex: 1;
       overflow-y: auto;
       padding: 32px 16px;
+      padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
       gap: 28px;
@@ -471,6 +492,11 @@
       margin: 0 auto;
       scroll-behavior: smooth;
       min-height: 0;
+      overscroll-behavior: contain;
+
+      /* FIX: Jarak aman pas auto-scroll ke elemen (misal search box focus) */
+      scroll-padding-top: 80px;
+      scroll-padding-bottom: 24px;
     }
 
     .message-row {
@@ -846,11 +872,19 @@
       z-index: 50;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.3s ease, right 0.3s ease;
+      transition: opacity 0.3s ease, right 0.3s ease, transform 0.2s ease;
     }
 
     body.right-rail-collapsed .floating-nav { right: 24px; }
     .floating-nav.visible { opacity: 1; pointer-events: auto; }
+
+    /* FIX: Sembunyiin floating nav pas user lagi search
+       — biar gak nutupin search box atau hasil match */
+    body.searching .floating-nav {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translateY(20px);
+    }
 
     .floating-btn {
       width: 42px;
@@ -984,11 +1018,7 @@
 
     .help-label { color: var(--text-main); }
 
-    .help-keys {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
+    .help-keys { display: flex; gap: 4px; flex-shrink: 0; }
 
     .kbd {
       display: inline-flex;
@@ -1047,6 +1077,7 @@
         right: 0;
         top: 0;
         height: 100vh;
+        height: 100dvh;
         z-index: 101;
         box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
         transform: translateX(0);
@@ -1064,27 +1095,108 @@
         position: fixed;
         z-index: 100;
         height: 100vh;
+        height: 100dvh;
         box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+      }
+
+      /* FIX: Header compact di mobile + sticky */
+      header {
+        padding: 8px 12px;
+        position: sticky;
+        top: 0;
+        z-index: 30;
       }
 
       .sidebar-toggle { display: inline-block; }
       .bubble-wrapper { max-width: 95%; }
       .message-row.user .bubble-wrapper { max-width: 92%; }
-      .search-input { width: 120px; }
-      .search-input:focus { width: 160px; }
-      .floating-nav { bottom: 16px; right: 16px !important; }
+
+      /* FIX: Search input lebih compact + JANGAN expand lebar pas focus
+         (karena bikin header overflow pas keyboard aktif) */
+      .search-input {
+        width: 100px;
+        font-size: 0.75rem;
+        padding: 6px 28px 6px 28px;
+      }
+      .search-input:focus {
+        width: 120px;  /* dari 160px — lebih compact */
+      }
+
+      /* FIX: floating nav naik dikit + safe area */
+      .floating-nav {
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        right: 16px !important;
+      }
+
       .floating-btn { width: 38px; height: 38px; font-size: 1rem; }
       .copy-msg-btn, .msg-menu-btn { opacity: 0.7; }
       .meta-details .badge:not(.collapsed-badge) { display: none; }
       header { padding: 8px 12px; }
       .header-subtitle { display: none; }
-      .stats-footer { font-size: 0.68rem; gap: 12px; padding: 8px 12px; }
-      .right-rail { width: 260px; }
+
+      /* FIX: stats footer naikin padding + safe area */
+      .stats-footer {
+        font-size: 0.68rem;
+        gap: 12px;
+        padding: 8px 12px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .right-rail {
+        width: 260px;
+        height: 100vh;
+        height: 100dvh;
+      }
     }
 
     @media (max-width: 500px) {
       .header-tools .header-btn:not(#theme-toggle):not(#right-rail-toggle):not(#help-toggle) {
         display: none;
+      }
+    }
+
+    /* === FIX: Mobile Viewport (dynamic vh + safe area) === */
+    @supports (height: 100dvh) {
+      body,
+      .main-area {
+        height: 100dvh;
+      }
+
+      .sidebar,
+      .right-rail {
+        height: 100dvh;
+      }
+    }
+
+    /* === FIX: Keyboard Active (mobile) === */
+    /* Kalo keyboard aktif, visualViewport ngasih tinggi sebenarnya.
+       Kita pake var --vv-height yang di-set via JS. */
+    body.keyboard-active .main-area {
+      height: var(--vv-height, 100dvh);
+    }
+
+    /* Pas keyboard aktif, stats footer di-hide biar hemat space */
+    body.keyboard-active .stats-footer {
+      display: none;
+    }
+
+    /* Header tetep keliatan + kompak pas keyboard aktif */
+    body.keyboard-active header {
+      padding: 6px 10px;
+    }
+
+    /* Fix address bar overlap di mobile — pake safe-area-inset-bottom */
+    @media (max-width: 768px) {
+      .chat-container::after {
+        content: "";
+        display: block;
+        height: env(safe-area-inset-bottom, 0px);
+        min-height: 8px;
+        flex-shrink: 0;
+      }
+
+      .stats-footer {
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
       }
     }
 
@@ -1190,6 +1302,10 @@
             <span class="help-label">Clear search</span>
             <span class="help-keys"><span class="kbd">Esc</span></span>
           </div>
+          <div class="help-row">
+            <span class="help-label">Tutup panel (saat gak searching)</span>
+            <span class="help-keys"><span class="kbd">Esc</span></span>
+          </div>
         </div>
 
         <div class="help-section">
@@ -1251,7 +1367,7 @@
     <div class="sidebar-footer">
       <div class="sidebar-footer-brand">
         <span>👻</span>
-        <span>v2.2.3-GW</span>
+        <span>v2.2.4-GW</span>
       </div>
       <div class="sidebar-footer-actions">
         <button class="sidebar-icon-btn" id="sidebar-theme-toggle" title="Toggle tema">🌙</button>
@@ -1736,11 +1852,22 @@
         searchMatches = [];
         activeMatchIndex = -1;
         searchCount.textContent = "";
+        // FIX: Clear state searching — biar floating nav muncul lagi
+        document.body.classList.remove("searching");
       }
 
       function doSearch(query) {
         clearSearch();
-        if (!query || query.length < 2) return;
+
+        // FIX: Kalo query kosong / terlalu pendek, matiin state searching
+        if (!query || query.length < 2) {
+          document.body.classList.remove("searching");
+          return;
+        }
+
+        // FIX: Set state searching — biar floating nav sembunyi
+        document.body.classList.add("searching");
+
         const lowerQuery = query.toLowerCase();
         const walker = document.createTreeWalker(chatContainer, NodeFilter.SHOW_TEXT, {
           acceptNode: (node) => {
@@ -1800,9 +1927,16 @@
           focusMatch(activeMatchIndex);
         }
         if (e.key === "Escape") {
-          searchInput.value = "";
-          clearSearch();
-          searchInput.blur();
+          e.preventDefault();
+          e.stopPropagation();
+          // FIX: Esc pas search aktif = clear search dulu,
+          // JANGAN close sidebar/rail
+          if (searchInput.value) {
+            searchInput.value = "";
+            clearSearch();
+          } else {
+            searchInput.blur();
+          }
         }
       });
 
@@ -1818,7 +1952,12 @@
         const clientHeight = chatContainer.clientHeight;
         const notAtTop = scrollTop > 200;
         const notAtBottom = scrollTop + clientHeight < scrollHeight - 200;
-        floatingNav.classList.toggle("visible", notAtTop || notAtBottom);
+
+        // FIX: Jangan show floating nav kalo lagi searching
+        const isSearching = document.body.classList.contains("searching");
+        const shouldShow = (notAtTop || notAtBottom) && !isSearching;
+
+        floatingNav.classList.toggle("visible", shouldShow);
         scrollTopBtn.style.display = notAtTop ? "flex" : "none";
         scrollBottomBtn.style.display = notAtBottom ? "flex" : "none";
         mainHeader.classList.toggle("scrolled", scrollTop > 20);
@@ -1965,10 +2104,17 @@
           return;
         }
 
-        // Esc: close modal dulu, baru panel lain
+        // FIX: Esc — prioritas: modal > search > sidebar/rail
         if (e.key === "Escape") {
           if (helpOverlay?.classList.contains("visible")) {
             closeHelp();
+            return;
+          }
+          // Kalo lagi searching, Esc = clear search (bukan close panel)
+          if (document.body.classList.contains("searching")) {
+            searchInput.value = "";
+            clearSearch();
+            searchInput.blur();
             return;
           }
           if (!sidebar.classList.contains("collapsed")) closeSidebar();
@@ -2001,6 +2147,44 @@
       // ===== STEP 16: INITIAL LAYOUT =====
       if (window.innerWidth > 1024) openRightRail();
       else document.body.classList.add("right-rail-collapsed");
+
+      // ===== STEP 16B: FIX — VisualViewport (keyboard mobile) =====
+      (function setupVisualViewport() {
+        // Cek browser support (modern browsers)
+        if (!window.visualViewport) return;
+
+        const vv = window.visualViewport;
+        const docEl = document.documentElement;
+
+        function updateViewportHeight() {
+          // Set CSS variable --vw-height = tinggi viewport sebenarnya
+          // (termasuk kalo keyboard aktif, ini bakal lebih kecil dari 100dvh)
+          docEl.style.setProperty("--vv-height", vv.height + "px");
+
+          // Kalo keyboard aktif (viewport lebih pendek dari screen),
+          // kasih class body.keyboard-active biar CSS bisa handle
+          const isKeyboardActive = vv.height < window.innerHeight - 100;
+          document.body.classList.toggle("keyboard-active", isKeyboardActive);
+        }
+
+        updateViewportHeight();
+        vv.addEventListener("resize", updateViewportHeight);
+        vv.addEventListener("scroll", updateViewportHeight);
+
+        // FIX: Auto-scroll chat container ke top pas search box di-focus
+        // biar header gak ketutup keyboard
+        searchInput?.addEventListener("focus", () => {
+          // Kalo di mobile & keyboard bakal muncul, scroll header ke atas
+          if (window.innerWidth <= 768) {
+            requestAnimationFrame(() => {
+              // Reset scroll chat container biar header tetep keliatan
+              // (chat container yang scroll, bukan window)
+              const header = document.getElementById("main-header");
+              header?.scrollIntoView({ block: "start", behavior: "smooth" });
+            });
+          }
+        });
+      })();
 
       // ===== STEP 17: STATS =====
       (function computeStats() {
