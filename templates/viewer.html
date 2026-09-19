@@ -79,6 +79,143 @@
       text-size-adjust: 100%;
     }
 
+    /* === LOADING OVERLAY (v2.6.4) === */
+    .gw-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.4s ease-out;
+      pointer-events: auto;
+    }
+
+    .gw-loader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .gw-loader.fade-complete {
+      display: none;
+    }
+
+    .gw-loader-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      text-align: center;
+      padding: 32px;
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .gw-loader-logo {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: gw-logo-pulse 2s ease-in-out infinite;
+    }
+
+    .gw-loader-logo svg {
+      width: 64px !important;
+      height: 64px !important;
+      fill: var(--accent) !important;
+      filter: drop-shadow(0 0 16px var(--accent-glow));
+    }
+
+    @keyframes gw-logo-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(0.95); opacity: 0.85; }
+    }
+
+    .gw-loader-wordmark {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      line-height: 1;
+    }
+
+    .gw-loader-progress {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .gw-loader-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-surface);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gw-loader-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg,
+                  var(--accent) 0%,
+                  var(--accent) 60%,
+                  var(--purple) 100%);
+      border-radius: 9999px;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gw-loader-fill::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,
+                  transparent 0%,
+                  rgba(255, 255, 255, 0.3) 50%,
+                  transparent 100%);
+      animation: gw-shimmer 1.5s ease-in-out infinite;
+    }
+
+    @keyframes gw-shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .gw-loader-percent {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 44px;
+      text-align: right;
+      letter-spacing: 0.02em;
+    }
+
+    .gw-loader-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+      min-height: 1.2em;
+      transition: color 0.2s ease;
+    }
+
+    @media print {
+      .gw-loader { display: none !important; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .gw-loader-logo { animation: none; }
+      .gw-loader-fill::after { animation: none; }
+      .gw-loader-fill { transition: none; }
+    }
+
     /* === BRAND === */
     .gw-brand {
       display: inline-flex;
@@ -141,32 +278,9 @@
       gap: 8px;
     }
 
-    .sidebar-header .gw-brand { flex: 1; min-width: 0; }
+    .sidebar-header .gw-brand { flex: 1; min-width: 0; justify-content: flex-start; }
     .sidebar-header .gw-logo-svg { width: 22px !important; height: 22px !important; }
     .sidebar-header .gw-wordmark { font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .sidebar-actions { display: flex; gap: 4px; flex-shrink: 0; }
-
-    .sidebar-icon-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      width: 30px;
-      height: 30px;
-      border-radius: 6px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.85rem;
-      transition: all 0.15s ease;
-    }
-
-    .sidebar-icon-btn:hover {
-      background: var(--bg-surface);
-      border-color: var(--border-subtle);
-      color: var(--accent);
-    }
 
     .sidebar-list { flex: 1; overflow-y: auto; padding: 6px 8px 12px; }
     .sidebar-section { margin-bottom: 6px; }
@@ -228,6 +342,37 @@
     }
 
     .sidebar-footer-actions { display: flex; gap: 4px; }
+
+    .sidebar-icon-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: all 0.15s ease;
+    }
+
+    .sidebar-icon-btn:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-subtle);
+      color: var(--accent);
+    }
+
+    #sidebar-close-btn {
+      color: var(--text-muted);
+    }
+
+    #sidebar-close-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--bg-surface);
+    }
 
     .sidebar-toggle {
       display: none;
@@ -1287,7 +1432,7 @@
       .sidebar, .right-rail, .floating-nav, .sidebar-overlay, .right-rail-overlay,
       .copy-msg-btn, .msg-menu-wrapper, .msg-menu-dropdown, .collapse-toggle,
       .header-tools, .stats-bar, .search-bar, .sidebar-toggle, .help-modal-overlay,
-      .gw-toast, .avatar {
+      .gw-toast, .avatar, .gw-loader {
         display: none !important;
       }
 
@@ -1442,6 +1587,24 @@
   </style>
 </head>
 <body>
+  <!-- === LOADING OVERLAY (v2.6.4) === -->
+  <div class="gw-loader" id="gw-loader">
+    <div class="gw-loader-inner">
+      <div class="gw-loader-logo">
+        {{ logo_svg | safe }}
+      </div>
+      <div class="gw-loader-wordmark">GhostWriter</div>
+
+      <div class="gw-loader-progress">
+        <div class="gw-loader-bar">
+          <div class="gw-loader-fill" id="gw-loader-fill"></div>
+        </div>
+        <div class="gw-loader-percent" id="gw-loader-percent">0%</div>
+      </div>
+
+      <div class="gw-loader-text" id="gw-loader-text">Memuat arsip...</div>
+    </div>
+  </div>
 
   <!-- === OVERLAYS === -->
   <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -1515,8 +1678,16 @@
             <span class="help-keys"><span class="kbd">Swipe →</span></span>
           </div>
           <div class="help-row">
+            <span class="help-label">Tutup sidebar (kiri)</span>
+            <span class="help-keys"><span class="kbd">Swipe ←</span></span>
+          </div>
+          <div class="help-row">
             <span class="help-label">Buka navigasi user (kanan)</span>
             <span class="help-keys"><span class="kbd">Swipe ←</span></span>
+          </div>
+          <div class="help-row">
+            <span class="help-label">Tutup navigasi user (kanan)</span>
+            <span class="help-keys"><span class="kbd">Swipe →</span></span>
           </div>
         </div>
 
@@ -1543,9 +1714,6 @@
         {{ logo_svg | safe }}
         <span class="gw-wordmark">GhostWriter</span>
       </a>
-      <div class="sidebar-actions">
-        <button class="sidebar-icon-btn" id="sidebar-search-btn" title="Cari ( / )">🔍</button>
-      </div>
     </div>
     <div class="sidebar-list" id="sidebar-list">
       <div class="sidebar-section">
@@ -1559,10 +1727,10 @@
     <div class="sidebar-footer">
       <div class="sidebar-footer-brand">
         <span>👻</span>
-        <span>v2.6.3-GW</span>
+        <span>v2.6.6-GW</span>
       </div>
       <div class="sidebar-footer-actions">
-        <button class="sidebar-icon-btn" id="sidebar-theme-toggle" title="Toggle tema">🌙</button>
+        <button class="sidebar-icon-btn" id="sidebar-close-btn" title="Tutup sidebar (Esc)">✕</button>
       </div>
     </div>
   </aside>
@@ -1696,7 +1864,7 @@
   <script src="../../vendor/highlight.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js';"></script>
   <script src="../../vendor/katex.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js';"></script>
   <script src="../../vendor/katex-auto-render.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js';"></script>
-  <script>
+    <script>
     document.addEventListener("DOMContentLoaded", () => {
       const STORAGE_KEY_THEME = "gw-theme";
       const STORAGE_KEY_SCROLL = "gw-scroll-" + (document.getElementById("chat-title")?.textContent || "").trim();
@@ -1706,8 +1874,6 @@
       if (savedTheme === "light") {
         document.documentElement.setAttribute("data-theme", "light");
         document.getElementById("theme-toggle").textContent = "☀️";
-        const sTheme = document.getElementById("sidebar-theme-toggle");
-        if (sTheme) sTheme.textContent = "☀️";
       }
 
       // ===== STEP 1: MARKED =====
@@ -1762,12 +1928,19 @@
       const sidebar = document.getElementById("sidebar");
       const sidebarOverlay = document.getElementById("sidebar-overlay");
       const sidebarList = document.getElementById("sidebar-list");
-      const sidebarSearchBtn = document.getElementById("sidebar-search-btn");
-      const sidebarThemeToggle = document.getElementById("sidebar-theme-toggle");
+      const sidebarCloseBtn = document.getElementById("sidebar-close-btn");
 
       function openSidebar() {
         sidebar.classList.remove("collapsed");
         if (window.innerWidth <= 768) sidebarOverlay.classList.add("visible");
+        // Auto-close right rail (biar gak tumpang tindih)
+        const rr = document.getElementById("right-rail");
+        if (rr && !rr.classList.contains("collapsed")) {
+          rr.classList.add("collapsed");
+          document.body.classList.add("right-rail-collapsed");
+          const rrOverlay = document.getElementById("right-rail-overlay");
+          if (rrOverlay) rrOverlay.classList.remove("visible");
+        }
       }
 
       function closeSidebar() {
@@ -1781,15 +1954,8 @@
       });
       sidebarOverlay?.addEventListener("click", closeSidebar);
 
-      sidebarSearchBtn?.addEventListener("click", () => {
-        const input = document.getElementById("search-input");
-        input?.focus();
-        if (window.innerWidth <= 768) closeSidebar();
-      });
-
-      sidebarThemeToggle?.addEventListener("click", () => {
-        document.getElementById("theme-toggle")?.click();
-      });
+      // v2.6.6: Tombol close sidebar di footer
+      sidebarCloseBtn?.addEventListener("click", closeSidebar);
 
       function getDateGroup(mtime) {
         const now = new Date();
@@ -1930,8 +2096,7 @@
         }
       });
 
-      // ===== STEP 8B: SHARED CONTAINER REF (v2.6.3 FIX) =====
-      // Pindahin chatContainer ke atas biar gak ReferenceError di STEP 9B
+      // ===== STEP 8B: SHARED CONTAINER REF =====
       const chatContainer = document.getElementById("chat-container");
 
       // ===== STEP 9: COPY MESSAGE =====
@@ -2028,7 +2193,7 @@
         });
       });
 
-      // FIX v2.6.2: Auto-close menu pas scroll
+      // Auto-close menu pas scroll
       chatContainer?.addEventListener("scroll", () => {
         closeAllMsgMenus();
       }, { passive: true });
@@ -2294,6 +2459,13 @@
         rightRail.classList.remove("collapsed");
         document.body.classList.remove("right-rail-collapsed");
         if (window.innerWidth <= 1024) rightRailOverlay?.classList.add("visible");
+        // Auto-close sidebar (biar gak tumpang tindih)
+        const sb = document.getElementById("sidebar");
+        if (sb && !sb.classList.contains("collapsed")) {
+          sb.classList.add("collapsed");
+          const sbOverlay = document.getElementById("sidebar-overlay");
+          if (sbOverlay) sbOverlay.classList.remove("visible");
+        }
       }
 
       function closeRightRail() {
@@ -2310,7 +2482,6 @@
       rightRailClose?.addEventListener("click", closeRightRail);
       rightRailOverlay?.addEventListener("click", closeRightRail);
 
-      // NEW v2.6.1: Direct profile button toggle
       const rightRailToggle = document.getElementById("right-rail-toggle");
       rightRailToggle?.addEventListener("click", toggleRightRail);
 
@@ -2323,12 +2494,10 @@
         const next = current === "light" ? "dark" : "light";
         document.documentElement.setAttribute("data-theme", next);
         themeToggle.textContent = next === "light" ? "☀️" : "🌙";
-        const sTheme = document.getElementById("sidebar-theme-toggle");
-        if (sTheme) sTheme.textContent = next === "light" ? "☀️" : "🌙";
         try { localStorage.setItem(STORAGE_KEY_THEME, next); } catch (e) {}
       });
 
-      // ===== STEP 14: HEADER MENU (⋮ — cuma Print) =====
+      // ===== STEP 14: HEADER MENU (⋮) =====
       const headerMenuToggle = document.getElementById("header-menu-toggle");
       const headerMenuDropdown = document.getElementById("header-menu-dropdown");
 
@@ -2454,7 +2623,7 @@
         vv.addEventListener("scroll", updateViewportHeight);
       })();
 
-      // ===== STEP 16C: SWIPE GESTURE =====
+      // ===== STEP 16C: SWIPE GESTURE (v2.6.6 — Bidirectional) =====
       (function setupSwipeGestures() {
         const EDGE_ZONE = 50;
         const SWIPE_THRESHOLD = 50;
@@ -2494,7 +2663,11 @@
 
           fromEdge = startX <= EDGE_ZONE || startX >= window.innerWidth - EDGE_ZONE;
 
-          if (!fromEdge && isInteractive(startTarget)) {
+          // Kalo di dalam sidebar / right rail yang terbuka, JANGAN skip
+          const inOpenSidebar = startTarget.closest && startTarget.closest(".sidebar:not(.collapsed)");
+          const inOpenRail = startTarget.closest && startTarget.closest(".right-rail:not(.collapsed)");
+
+          if (!fromEdge && !inOpenSidebar && !inOpenRail && isInteractive(startTarget)) {
             tracking = false;
             return;
           }
@@ -2523,28 +2696,41 @@
           const swipedRight = deltaX > 0;
           const swipedLeft = deltaX < 0;
 
-          if (swipedRight) {
-            const sb = document.getElementById("sidebar");
-            if (sb && sb.classList.contains("collapsed")) {
-              if (startX <= EDGE_ZONE || startX < window.innerWidth / 2) {
-                const toggle = document.getElementById("sidebar-toggle");
-                if (toggle) toggle.click();
-              }
+          const sidebarEl = document.getElementById("sidebar");
+          const rightRailEl = document.getElementById("right-rail");
+          const sidebarOpen = sidebarEl && !sidebarEl.classList.contains("collapsed");
+          const rightRailOpen = rightRailEl && !rightRailEl.classList.contains("collapsed");
+
+          // === PRIORITAS 1: NUTUP yang lagi kebuka ===
+
+          // Sidebar kebuka + swipe KIRI → tutup sidebar
+          if (sidebarOpen && swipedLeft) {
+            closeSidebar();
+            return;
+          }
+
+          // Right rail kebuka + swipe KANAN → tutup right rail
+          if (rightRailOpen && swipedRight) {
+            closeRightRail();
+            return;
+          }
+
+          // === PRIORITAS 2: BUKA yang ketutup ===
+
+          // Sidebar ketutup + swipe KANAN → buka sidebar
+          if (!sidebarOpen && swipedRight) {
+            if (fromEdge || startX < window.innerWidth / 2) {
+              if (rightRailOpen) closeRightRail();
+              openSidebar();
             }
             return;
           }
 
-          if (swipedLeft) {
-            const rr = document.getElementById("right-rail");
-            if (rr && rr.classList.contains("collapsed")) {
-              if (startX >= window.innerWidth - EDGE_ZONE || startX > window.innerWidth / 2) {
-                rr.classList.remove("collapsed");
-                document.body.classList.remove("right-rail-collapsed");
-                const overlay = document.getElementById("right-rail-overlay");
-                if (overlay && window.innerWidth <= 1024) {
-                  overlay.classList.add("visible");
-                }
-              }
+          // Right rail ketutup + swipe KIRI → buka right rail
+          if (!rightRailOpen && swipedLeft) {
+            if (fromEdge || startX > window.innerWidth / 2) {
+              if (sidebarOpen) closeSidebar();
+              openRightRail();
             }
             return;
           }
@@ -2701,6 +2887,81 @@
             }, 300);
           }
         });
+      })();
+
+      // ===== STEP 20: LOADING PROGRESS + HIDE (v2.6.4) =====
+      (function animateLoader() {
+        const loader = document.getElementById("gw-loader");
+        const fill = document.getElementById("gw-loader-fill");
+        const percent = document.getElementById("gw-loader-percent");
+        const textEl = document.getElementById("gw-loader-text");
+        if (!loader || !fill || !percent || !textEl) return;
+
+        const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        const steps = [
+          { at: 0,   text: "Memuat arsip..." },
+          { at: 25,  text: "Render markdown..." },
+          { at: 50,  text: "Highlight code..." },
+          { at: 75,  text: "Menyiapkan viewer..." },
+          { at: 100, text: "Siap!" },
+        ];
+
+        function setProgress(p) {
+          const clamped = Math.max(0, Math.min(100, p));
+          fill.style.width = clamped + "%";
+          percent.textContent = Math.round(clamped) + "%";
+
+          for (let i = steps.length - 1; i >= 0; i--) {
+            if (clamped >= steps[i].at) {
+              if (textEl.textContent !== steps[i].text) {
+                textEl.textContent = steps[i].text;
+              }
+              break;
+            }
+          }
+        }
+
+        function dismiss() {
+          if (loader.classList.contains("hidden")) return;
+          loader.classList.add("hidden");
+          setTimeout(() => {
+            loader.classList.add("fade-complete");
+          }, 450);
+        }
+
+        if (prefersReduced) {
+          setProgress(100);
+          setTimeout(dismiss, 200);
+          return;
+        }
+
+        const startTime = performance.now();
+        const FAKE_DURATION = 800;
+        const FAKE_MAX = 85;
+
+        function tick(now) {
+          const elapsed = now - startTime;
+          const t = Math.min(1, elapsed / FAKE_DURATION);
+          const eased = 1 - Math.pow(1 - t, 3);
+          setProgress(eased * FAKE_MAX);
+
+          if (t < 1) {
+            requestAnimationFrame(tick);
+          } else {
+            setTimeout(() => {
+              setProgress(100);
+              setTimeout(dismiss, 250);
+            }, 200);
+          }
+        }
+
+        requestAnimationFrame(tick);
+
+        setTimeout(() => {
+          setProgress(100);
+          setTimeout(dismiss, 200);
+        }, 3000);
       })();
     });
 
